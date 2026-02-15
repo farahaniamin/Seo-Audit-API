@@ -29,6 +29,12 @@ export function initDb() {
     report_json TEXT NOT NULL,
     created_at TEXT NOT NULL
   );
+
+  -- Performance indexes for common queries
+  CREATE INDEX IF NOT EXISTS idx_audits_status ON audits(status);
+  CREATE INDEX IF NOT EXISTS idx_audits_created ON audits(created_at);
+  CREATE INDEX IF NOT EXISTS idx_audits_url ON audits(requested_url);
+  CREATE INDEX IF NOT EXISTS idx_audits_status_created ON audits(status, created_at);
   `);
 }
 

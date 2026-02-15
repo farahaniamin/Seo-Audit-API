@@ -29,7 +29,7 @@ export async function detectSiteType(seedUrl: string, candidates: string[], limi
   const byUrls = scoreByUrlPatterns([seedUrl, ...candidates.slice(0, 200)]);
 
   try {
-    const home = await fetchHtml(seedUrl, limits.timeout_ms, limits.max_bytes);
+    const home = await fetchHtml(seedUrl, limits.per_page_timeout_ms, limits.max_html_bytes);
     const html = (home.body || '').toLowerCase();
 
     // Ecommerce signals
