@@ -2,7 +2,7 @@ import type { Lang } from '../types.js';
 import { t } from '../utils/i18n.js';
 import type { Page } from './smart.js';
 
-type Pillar = 'indexability' | 'crawlability' | 'onpage' | 'technical' | 'content_quality' | 'freshness';
+type Pillar = 'indexability' | 'crawlability' | 'onpage' | 'technical' | 'freshness';
 type Severity = 'critical' | 'high' | 'medium' | 'low';
 
 type IssueDef = {
@@ -33,9 +33,9 @@ const ISSUE_DEFS: IssueDef[] = [
   // Lower impact - accessibility
   { id: 'G01', pillar: 'technical', weight: 5, severity: 'low', quick_win: true, max_ratio: 0.9 }, // missing alt - REDUCED (was 7, now 5)
   
-  // Content quality issues (from freshness analysis)
+  // Freshness issue (from WP API analysis)
   { id: 'C01', pillar: 'freshness', weight: 15, severity: 'high', max_ratio: 1.0 }, // stale content (>6 months)
-  { id: 'C02', pillar: 'content_quality', weight: 6, severity: 'medium', max_ratio: 0.5 }, // thin content types
+  // Note: C02 (thin content types) is tracked as a finding but not scored since we don't measure actual content depth
 ];
 
 const SEVERITY_MULT: Record<Severity, number> = {
@@ -109,7 +109,6 @@ export function scoreSite(
     crawlability: 0,
     onpage: 0,
     technical: 0,
-    content_quality: 0,
     freshness: freshnessPenalty,
   };
   
@@ -125,17 +124,16 @@ export function scoreSite(
     crawlability: Math.max(0, 100 - pillarPenalty.crawlability),
     onpage: Math.max(0, 100 - pillarPenalty.onpage),
     technical: Math.max(0, 100 - pillarPenalty.technical),
-    content_quality: Math.max(0, 100 - pillarPenalty.content_quality),
     freshness: freshnessData ? Math.max(0, 100 - pillarPenalty.freshness) : 0,
   };
 
   // Dynamic weights based on site type and data availability
   const baseWeights =
     siteType === 'ecommerce'
-      ? { indexability: 0.22, crawlability: 0.16, onpage: 0.24, technical: 0.16, content_quality: 0.08, freshness: 0.14 }
+      ? { indexability: 0.24, crawlability: 0.18, onpage: 0.26, technical: 0.18, freshness: 0.14 }
       : siteType === 'corporate'
-        ? { indexability: 0.20, crawlability: 0.15, onpage: 0.26, technical: 0.15, content_quality: 0.12, freshness: 0.12 }
-        : { indexability: 0.21, crawlability: 0.15, onpage: 0.25, technical: 0.15, content_quality: 0.10, freshness: 0.14 };
+        ? { indexability: 0.22, crawlability: 0.17, onpage: 0.28, technical: 0.17, freshness: 0.16 }
+        : { indexability: 0.23, crawlability: 0.17, onpage: 0.27, technical: 0.17, freshness: 0.16 };
 
   // Adjust weights if freshness data not available
   const weights = { ...baseWeights };
@@ -143,7 +141,7 @@ export function scoreSite(
     // Redistribute freshness weight to other pillars
     const freshnessWeight = weights.freshness;
     weights.freshness = 0;
-    const otherPillars = ['indexability', 'crawlability', 'onpage', 'technical', 'content_quality'] as const;
+    const otherPillars = ['indexability', 'crawlability', 'onpage', 'technical'] as const;
     const redistributed = freshnessWeight / otherPillars.length;
     otherPillars.forEach(p => weights[p] += redistributed);
   }
@@ -154,7 +152,6 @@ export function scoreSite(
     pillars.crawlability * weights.crawlability +
     pillars.onpage * weights.onpage +
     pillars.technical * weights.technical +
-    pillars.content_quality * weights.content_quality +
     pillars.freshness * weights.freshness;
 
   const total_penalty = items.reduce((s, it) => s + it.penalty, 0) + freshnessPenalty;
@@ -176,7 +173,6 @@ export function scoreSite(
       crawlability: Math.round(pillars.crawlability * 10) / 10,
       onpage: Math.round(pillars.onpage * 10) / 10,
       technical: Math.round(pillars.technical * 10) / 10,
-      content_quality: Math.round(pillars.content_quality * 10) / 10,
       freshness: Math.round(pillars.freshness * 10) / 10,
     },
     breakdown: {
