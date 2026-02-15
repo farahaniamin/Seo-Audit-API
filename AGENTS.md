@@ -8,6 +8,7 @@ This file provides guidance to agents when working with code in this repository.
 - **Database**: SQLite with WAL mode (`db.pragma('journal_mode = WAL')`). Both processes call `initDb()` on startup.
 - **Worker polling**: Worker claims queued audits via atomic UPDATE with 800ms polling interval.
 - **Audit flow**: API receives requests → writes to DB → worker polls and processes → writes report → API serves results.
+- **WordPress Integration**: When WP REST API is detected, fetches content metadata for enhanced analysis (freshness, site type, total content count).
 
 ## Build/Run Commands
 
@@ -65,6 +66,7 @@ npx eslint . --ext .ts --fix  # Auto-fix linting issues
 - Return structured error responses: `{ error: { code: 'ERROR_CODE', message: '...' } }`
 - Use HTTP status codes appropriately: 400 (bad request), 404 (not found), 409 (conflict), etc.
 - Worker catches audit failures and updates DB with error status
+- **WP API errors**: Gracefully degrade to pure crawling if WP REST API fails
 
 ### Functions & Patterns
 - **Env helpers**: Use `env()`/`envInt()` from `src/env.ts` - throws on missing required vars, supports fallbacks
@@ -79,40 +81,83 @@ npx eslint . --ext .ts --fix  # Auto-fix linting issues
 - **Database**: Use better-sqlite3 with prepared statements. All SQL in `src/db.ts`.
 - **Date handling**: Use `new Date().toISOString()` for consistent UTC timestamps
 - **Progress callbacks**: Pass `(stage, value) => void` for long-running operations
+- **WP API rate limiting**: Use 600ms delay between requests, max 10 pages (1000 items)
 
 ### Project Structure
 ```
 src/
-├── server.ts           # Hono API server
-├── worker.ts           # Background job processor
-├── db.ts              # SQLite database operations
-├── types.ts           # TypeScript type definitions
-├── env.ts             # Environment variable helpers
-├── audit/             # Audit logic
-│   ├── runAudit.ts    # Main audit orchestration
-│   ├── smart.ts       # Smart sampling algorithm
-│   ├── score.ts       # Scoring logic
-│   ├── summary.ts     # Findings aggregation
-│   ├── telegram.ts    # Telegram message formatting
-│   ├── pdf.ts         # PDF report generation
-│   ├── fetcher.ts     # HTTP fetching
-│   ├── html.ts        # HTML parsing
-│   ├── sitemap.ts     # Sitemap parsing
-│   ├── robots.ts      # robots.txt handling
-│   ├── linkcheck.ts   # Link validation
-│   ├── siteType.ts    # Site type detection
-│   └── url.ts         # URL utilities
+├── server.ts              # Hono API server
+├── worker.ts              # Background job processor
+├── db.ts                  # SQLite database operations
+├── types.ts               # TypeScript type definitions
+├── env.ts                 # Environment variable helpers
+├── audit/                 # Audit logic
+│   ├── runAudit.ts        # Main audit orchestration
+│   ├── wpApi.ts           # WordPress REST API client ⭐ NEW v1.7
+│   ├── freshness.ts       # Content freshness analysis ⭐ NEW v1.7
+│   ├── score.ts           # 5-pillar scoring algorithm
+│   ├── smart.ts           # Smart sampling algorithm
+│   ├── summary.ts         # Findings aggregation
+│   ├── telegram.ts        # Telegram message formatting
+│   ├── pdf.ts             # PDF report generation
+│   ├── fetcher.ts         # HTTP fetching
+│   ├── html.ts            # HTML parsing
+│   ├── sitemap.ts         # Sitemap parsing
+│   ├── robots.ts          # robots.txt handling
+│   ├── linkcheck.ts       # Link validation
+│   ├── siteType.ts        # Site type detection
+│   └── url.ts             # URL utilities
 └── utils/
-    └── i18n.ts        # Internationalization
+    └── i18n.ts            # Internationalization
 ```
 
 ## Key Files
 
-- `src/audit/runAudit.ts` - Main audit orchestration, exports `buildLimits()` for profile defaults
+- `src/audit/runAudit.ts` - Main audit orchestration, coordinates all modules
+- `src/audit/wpApi.ts` - WordPress REST API integration, fetches content metadata
+- `src/audit/freshness.ts` - Content freshness calculations and latest content tracking
+- `src/audit/score.ts` - 5-pillar scoring algorithm (Indexability, Crawlability, On-Page, Technical, Freshness)
+- `src/audit/smart.ts` - Smart sampling with stratified selection
+- `src/audit/siteType.ts` - Site classification (ecommerce/corporate/content)
 - `src/db.ts` - All database operations, SQLite schema
-- `src/types.ts` - Core type definitions (AuditStatus, Limits, Report, etc.)
+- `src/types.ts` - Core type definitions (AuditStatus, Limits, Report, WpApiData, etc.)
 - `src/env.ts` - Environment variable access helpers
 - `src/utils/i18n.ts` - Translation strings and language detection
+- `SCORING.md` - Detailed scoring algorithm documentation
+
+## WordPress Integration (v1.7)
+
+### Detection
+- Automatically detects WP sites via `/wp-json/wp/v2/types` endpoint
+- 5-second timeout, gracefully degrades if unavailable
+- Uses lightweight endpoint (25KB) vs root endpoint (2.4MB)
+
+### Data Fetched
+- **Post types**: products, posts, pages, custom types
+- **Content items**: URL, modified date, status, title
+- **Taxonomies**: categories, tags, product categories
+- **Total count**: Exact content item count
+
+### Freshness Analysis
+- Calculates freshness score (0-100) based on last modified dates
+- Identifies stale content (>6 months old)
+- Tracks 5 most recent products and posts
+- Generates recommendations for content updates
+
+### Integration in Audit Flow
+```typescript
+// 1. Detect and fetch WP data (concurrent with robots/sitemap)
+const wpData = await fetchWpData(origin, limits);
+
+// 2. Use for site type classification
+const siteType = detectSiteTypeWithWpData(wpData);
+
+// 3. Add priority URLs to crawl candidates
+const priorityUrls = getPriorityUrls(wpData.contentItems, 20, 180);
+
+// 4. Include freshness in scoring
+const scores = scoreSite(pages, totals, lang, siteType, freshnessData);
+```
 
 ## Configuration
 
@@ -120,6 +165,7 @@ src/
 - **ESLint**: Uses typescript-eslint (config in package.json)
 - **Environment**: Copy `.env.example` to `.env` for local development
 - **Data directory**: SQLite DB stored in `./data/` (gitignored)
+- **Port**: Default 8787 (Cloudflare Workers compatible)
 
 ## Common Patterns
 
@@ -140,6 +186,13 @@ src/
 2. Use `t(lang, key)` to retrieve translated string
 3. Fallback to English if translation missing
 
+### Adding WP API features
+1. Add fetch function to `src/audit/wpApi.ts`
+2. Update `WpApiData` type in `src/types.ts`
+3. Process data in `src/audit/freshness.ts` if freshness-related
+4. Integrate into `src/audit/runAudit.ts` flow
+5. Update report generation to include new fields
+
 ## Important Notes
 
 - Always import with `.js` extension even for `.ts` files
@@ -147,4 +200,8 @@ src/
 - Worker uses atomic UPDATE to claim jobs (prevents race conditions)
 - PDF generation uses pdfkit - check memory usage for large reports
 - SQLite WAL mode enables concurrent reads during writes
-- Default port is 8787 (Cloudflare Workers compatible)
+- WP REST API requests are rate-limited (600ms between calls)
+- Persian/Arabic URLs are properly handled (percent-encoding normalization)
+- Static assets (CSS, JS, images) are filtered from crawl results
+- API endpoints (/wp-json/, /xmlrpc.php) are blocked from crawling
+- See `SCORING.md` for detailed scoring algorithm documentation
