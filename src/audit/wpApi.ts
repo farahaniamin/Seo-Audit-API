@@ -12,12 +12,13 @@ const WP_API_TIMEOUT = 5000; // 5 second timeout for API detection
  */
 function extractJsonFromText(text: string): any | null {
   // Find the first occurrence of "{" or "[" which indicates JSON start
-  const jsonStart = text.search(/^[\s\S]*?(\{|\[)/);
-  if (jsonStart === -1) return null;
-  
+  // Skip any PHP warnings/HTML that come before the JSON
+  const match = text.match(/(\{|\[)/);
+  if (!match || match.index === undefined) return null;
+
   // Extract from the JSON start marker
-  const jsonText = text.substring(jsonStart);
-  
+  const jsonText = text.substring(match.index);
+
   try {
     return JSON.parse(jsonText);
   } catch {
@@ -59,18 +60,21 @@ function sleep(ms: number) {
 
 /**
  * Detect if WordPress REST API is available
- * Returns true if /wp-json/ endpoint responds successfully
+ * Uses /wp-json/wp/v2/types endpoint which is smaller than root endpoint
+ * Returns true if types endpoint responds with valid JSON
  */
 export async function detectWpApi(origin: string, limits?: Limits): Promise<boolean> {
   try {
     const timeoutMs = limits?.per_page_timeout_ms || WP_API_TIMEOUT;
-    const result = await fetchText(`${origin}/wp-json/`, timeoutMs, 50000);
+    // Use types endpoint instead of root - it's much smaller (25KB vs 2.4MB)
+    const result = await fetchText(`${origin}/wp-json/wp/v2/types`, timeoutMs, 100000);
     
     if (result.status < 200 || result.status >= 400) return false;
     
     const data = extractJsonFromText(result.text);
-    // Verify it's actually WP REST API
-    return data && data.namespaces && data.namespaces.includes('wp/v2');
+    // Verify it's actually WP REST API by checking for expected structure
+    // Types endpoint returns an object with post type slugs as keys
+    return data && typeof data === 'object' && (data.post || data.page || data.product);
   } catch {
     return false;
   }
