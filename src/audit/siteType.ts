@@ -1,5 +1,5 @@
 import { fetchHtml } from './fetcher.js';
-import type { Limits } from '../types.js';
+import type { Limits, WpApiData } from '../types.js';
 
 export type SiteType = 'ecommerce' | 'corporate' | 'content' | 'unknown';
 
@@ -61,4 +61,42 @@ export async function detectSiteType(seedUrl: string, candidates: string[], limi
   if (max === byUrls.ecommerce) return 'ecommerce';
   if (max === byUrls.content) return 'content';
   return 'corporate';
+}
+
+/**
+ * Enhanced site type detection using WordPress REST API data
+ * More accurate than pure heuristic approach
+ */
+export function detectSiteTypeWithWpData(wpData: WpApiData | undefined): SiteType {
+  if (!wpData || !wpData.available) return 'unknown';
+  
+  const types = wpData.postTypes;
+  const total = wpData.totalItems;
+  
+  if (total === 0) return 'unknown';
+  
+  // E-commerce detection
+  if (types.product > 5 || types.product > total * 0.2) {
+    return 'ecommerce';
+  }
+  
+  // Content/blog detection
+  const postCount = types.post || 0;
+  const pageCount = types.page || 0;
+  
+  if (postCount > pageCount * 2) {
+    return 'content';
+  }
+  
+  // Corporate detection
+  if (pageCount > 5 && postCount < pageCount) {
+    return 'corporate';
+  }
+  
+  // Check taxonomy structure
+  if (wpData.taxonomies.includes('category') && wpData.taxonomies.includes('post_tag')) {
+    if (postCount > 10) return 'content';
+  }
+  
+  return 'unknown';
 }

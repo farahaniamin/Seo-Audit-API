@@ -1,6 +1,7 @@
-import type { Lang } from '../types.js';
+import type { Lang, WpContentItem, Finding } from '../types.js';
 import { t } from '../utils/i18n.js';
 import type { Page } from './smart.js';
+import { identifyStaleContent, findThinContentTypes } from './freshness.js';
 
 export function buildFindings(lang: Lang, pages: Page[], score: any) {
   const items = score?.breakdown?.items ?? [];
@@ -45,4 +46,54 @@ export function buildFindings(lang: Lang, pages: Page[], score: any) {
     .map((f) => f.id);
 
   return { findings, top_issues, quick_wins };
+}
+
+/**
+ * Build findings from WordPress content freshness analysis
+ */
+export function buildFreshnessFindings(
+  lang: Lang,
+  items: WpContentItem[]
+): Finding[] {
+  const findings: Finding[] = [];
+  
+  if (!items || items.length === 0) return findings;
+  
+  const publishedItems = items.filter(i => i.status === 'publish');
+  if (publishedItems.length === 0) return findings;
+  
+  // Find stale content (6+ months)
+  const staleItems = identifyStaleContent(items, 6);
+  if (staleItems.length > 0) {
+    const affectedPages = Math.min(staleItems.length, 100);
+    findings.push({
+      id: 'C01',
+      affected_pages: affectedPages,
+      checked_pages: publishedItems.length,
+      prevalence: affectedPages / publishedItems.length,
+      severity: staleItems.length > publishedItems.length * 0.5 ? 'high' : 'medium',
+    });
+  }
+  
+  // Find thin content types
+  const thinTypes = findThinContentTypes(items, 5);
+  const thinTypeCount = Object.keys(thinTypes).length;
+  if (thinTypeCount > 0) {
+    const totalTypes = Object.keys(
+      publishedItems.reduce((acc, i) => {
+        acc[i.type] = true;
+        return acc;
+      }, {} as Record<string, boolean>)
+    ).length;
+    
+    findings.push({
+      id: 'C02',
+      affected_pages: thinTypeCount,
+      checked_pages: totalTypes,
+      prevalence: thinTypeCount / totalTypes,
+      severity: 'low',
+    });
+  }
+  
+  return findings;
 }

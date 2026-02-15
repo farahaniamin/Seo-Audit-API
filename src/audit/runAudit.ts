@@ -1,13 +1,15 @@
-import type { AuditCreateRequest, Limits, Profile, Report } from '../types.js';
+import type { AuditCreateRequest, Limits, Profile, Report, WpApiData, FreshnessData, Finding } from '../types.js';
 import { fetchRobots } from './robots.js';
 import { discoverSitemaps, sampleSitemapUrls } from './sitemap.js';
 import { smartSample } from './smart.js';
 import { scoreSite } from './score.js';
-import { detectSiteType } from './siteType.js';
-import { buildFindings } from './summary.js';
+import { detectSiteTypeWithWpData } from './siteType.js';
+import { buildFindings, buildFreshnessFindings } from './summary.js';
 import { buildTelegram } from './telegram.js';
 import { inferLang } from '../utils/i18n.js';
 import { normalizeUrl as normalizeUrlStrict, isCrawlableUrl, sameHost } from './url.js';
+import { fetchWpData, getPriorityUrls } from './wpApi.js';
+import { calculateFreshnessScore, formatFreshnessData, getFreshnessRecommendations } from './freshness.js';
 
 function nowIso() { return new Date().toISOString(); }
 
@@ -64,8 +66,13 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
   const limits = buildLimits(profile, req.limits);
 
   const userLang = req.user_context?.lang ?? 'fa';
+  
+  // Fetch robots.txt and detect WP API concurrently
   onProgress?.('robots', 0);
-  const robots = await fetchRobots(origin, limits);
+  const [robots, wpData] = await Promise.all([
+    fetchRobots(origin, limits),
+    fetchWpData(origin, limits) // Non-blocking - continues even if WP API unavailable
+  ]);
   onProgress?.('robots', 1);
 
   // Prefer explicit user language, fall back to hints (eg. from robots / headers)
@@ -87,7 +94,23 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     )
   );
 
-  const siteType = await detectSiteType(url, candidates, limits);
+  // Add priority URLs from WordPress API if available
+  let priorityUrls: string[] = [];
+  if (wpData.available && wpData.contentItems.length > 0) {
+    priorityUrls = getPriorityUrls(wpData.contentItems, 20, 180); // 20 URLs, 6 months threshold
+    // Add priority URLs to candidates (they'll be crawled first)
+    for (const priorityUrl of priorityUrls) {
+      const normalized = normalizeUrlStrict(priorityUrl);
+      if (normalized && isCrawlableUrl(normalized) && sameHost(url, normalized)) {
+        if (!candidates.includes(normalized)) {
+          candidates.unshift(normalized); // Add to beginning for priority
+        }
+      }
+    }
+  }
+
+  // Enhanced site type detection using WP API data
+  const siteType = detectSiteTypeWithWpData(wpData);
 
   onProgress?.('crawl', 0);
   const crawl = await smartSample(url, limits, candidates, (n)=>onProgress?.('crawl', n), siteType);
@@ -95,8 +118,7 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
 
   const checked = crawl.pages.length;
 
-  // Link checks: keep it light and polite; (optional) you can extend later
-  // For MVP we just report the configured cap as "checked" by design if you enable it in worker later.
+  // Link checks: keep it light and polite
   const link_checks = limits.link_check_max;
 
   // Aggregate totals from per-page issues (computed in smartSample)
@@ -110,8 +132,27 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
   const scores = scoreSite(crawl.pages as any, totals, lang, siteType);
   const { findings, top_issues: topIssues, quick_wins: quickWins } = buildFindings(lang, crawl.pages as any, scores);
 
-  const estimatedTotal = sitemaps.estimated_total_urls;
-  const checkedRatio = estimatedTotal ? checked / estimatedTotal : null;
+  // Calculate content freshness from WP API data
+  let freshnessData: FreshnessData | undefined;
+  let freshnessFindings: Finding[] = [];
+  
+  if (wpData.available && wpData.contentItems.length > 0) {
+    const score = calculateFreshnessScore(wpData.lastModifiedDates, 6);
+    freshnessData = {
+      ...formatFreshnessData(wpData.contentItems, score),
+      recommendations: getFreshnessRecommendations(wpData.contentItems, lang),
+    };
+    freshnessFindings = buildFreshnessFindings(lang, wpData.contentItems);
+  }
+
+  // Merge freshness findings with regular findings
+  const allFindings = [...findings, ...freshnessFindings];
+
+  // Use WP API total if available for better coverage estimation
+  const estimatedTotal = wpData.available && wpData.totalItems > 0 
+    ? wpData.totalItems 
+    : sitemaps.estimated_total_urls;
+  const checkedRatio = estimatedTotal && estimatedTotal > 0 ? checked / estimatedTotal : null;
 
   const coverage = {
     mode: profile === 'smart' ? 'sample' : 'crawl',
@@ -161,16 +202,20 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
       site_type: scores.site_type,
       weights: scores.weights
     },
-    findings,
+    findings: allFindings,
     top_issues: topIssues,
     quick_wins: quickWins,
     pages_by_issue,
     pages_with_issues,
     telegram: { text: lang === 'fa' ? text_fa : text_en, text_en, text_fa },
+    wp_api: wpData.available ? wpData : undefined,
+    freshness: freshnessData,
     debug: {
       robots_ok: robots.ok,
       robots_status: robots.status,
-      sitemaps
+      sitemaps,
+      wp_api_available: wpData.available,
+      priority_urls_count: priorityUrls.length
     }
   };
 

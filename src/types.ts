@@ -57,6 +57,37 @@ export type Finding = {
   severity: 'critical' | 'high' | 'medium' | 'low';
 };
 
+// WordPress REST API Types
+export type WpContentItem = {
+  id: number;
+  url: string;
+  modified: string;
+  status: 'publish' | 'draft' | 'private' | 'future' | 'pending';
+  type: string;
+  title: string;
+  date: string;
+};
+
+export type WpApiData = {
+  available: boolean;
+  detected: boolean;
+  postTypes: Record<string, number>;
+  contentItems: WpContentItem[];
+  totalItems: number;
+  taxonomies: string[];
+  lastModifiedDates: string[];
+  draftCount: number;
+  error?: string;
+};
+
+export type FreshnessData = {
+  score: number; // 0-100
+  stale_count: number;
+  last_updated: string | null;
+  freshness_grade: string;
+  recommendations: string[];
+};
+
 
 export type PageReport = {
   url: string;
@@ -109,6 +140,12 @@ export type Report = {
     text_fa: string;
     text_en: string;
   };
+
+  // WordPress REST API data (if available)
+  wp_api?: WpApiData;
+  
+  // Content freshness analysis
+  freshness?: FreshnessData;
 
   debug?: any;
 };
