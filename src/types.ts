@@ -80,12 +80,21 @@ export type WpApiData = {
   error?: string;
 };
 
+export type LatestContentItem = {
+  title: string;
+  url: string;
+  modified: string;
+  type: 'product' | 'post';
+};
+
 export type FreshnessData = {
   score: number; // 0-100
   stale_count: number;
   last_updated: string | null;
   freshness_grade: string;
   recommendations: string[];
+  latest_products: LatestContentItem[];
+  latest_posts: LatestContentItem[];
 };
 
 

@@ -122,6 +122,44 @@ export function generateFreshnessFindings(
 }
 
 /**
+ * Get latest updated products and posts
+ */
+export function getLatestContent(
+  items: WpContentItem[],
+  count: number = 5
+): { latest_products: any[]; latest_posts: any[] } {
+  const now = Date.now();
+  
+  // Filter and sort products
+  const products = items
+    .filter(item => item.type === 'product' && item.status === 'publish')
+    .sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime())
+    .slice(0, count)
+    .map(item => ({
+      title: item.title,
+      url: item.url,
+      modified: item.modified,
+      type: 'product' as const,
+      days_ago: Math.floor((now - new Date(item.modified).getTime()) / (1000 * 60 * 60 * 24))
+    }));
+  
+  // Filter and sort posts
+  const posts = items
+    .filter(item => item.type === 'post' && item.status === 'publish')
+    .sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime())
+    .slice(0, count)
+    .map(item => ({
+      title: item.title,
+      url: item.url,
+      modified: item.modified,
+      type: 'post' as const,
+      days_ago: Math.floor((now - new Date(item.modified).getTime()) / (1000 * 60 * 60 * 24))
+    }));
+  
+  return { latest_products: products, latest_posts: posts };
+}
+
+/**
  * Format freshness data for report
  */
 export function formatFreshnessData(
@@ -132,11 +170,16 @@ export function formatFreshnessData(
   stale_count: number;
   last_updated: string | null;
   freshness_grade: string;
+  latest_products: any[];
+  latest_posts: any[];
 } {
   const staleItems = identifyStaleContent(items, 6);
   const lastUpdated = getLastUpdateDate(
     items.filter(i => i.status === 'publish').map(i => i.modified)
   );
+  
+  // Get latest products and posts
+  const { latest_products, latest_posts } = getLatestContent(items, 5);
   
   // Grade based on score
   let grade = 'F';
@@ -150,6 +193,8 @@ export function formatFreshnessData(
     stale_count: staleItems.length,
     last_updated: lastUpdated,
     freshness_grade: grade,
+    latest_products,
+    latest_posts,
   };
 }
 
