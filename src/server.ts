@@ -7,6 +7,8 @@ import type { AuditCreateRequest } from './types.js';
 import { inferLang, t } from './utils/i18n.js';
 import { renderReportPdf } from './audit/pdf.js';
 import { serve } from '@hono/node-server';
+import { validateUrl, checkDomainRateLimit } from './audit/validation.js';
+import { performHealthCheck, getSystemMetrics } from './monitoring/health.js';
 
 initDb();
 
@@ -21,17 +23,50 @@ const AuditCreateSchema = z.object({
 
 app.get('/healthz', (c)=>c.json({ ok: true }));
 
+app.get('/health', async (c) => {
+  const health = await performHealthCheck();
+  return c.json(health);
+});
+
+app.get('/metrics', (c) => {
+  const metrics = getSystemMetrics();
+  return c.json(metrics);
+});
+
 app.post('/v1/audits', async (c) => {
   const body = await c.req.json().catch(()=>null);
   const parsed = AuditCreateSchema.safeParse(body);
   if (!parsed.success) return c.json({ error: { code: 'BAD_REQUEST', message: parsed.error.message } }, 400);
 
   const req = parsed.data as AuditCreateRequest;
+  
+  // Validate URL
+  const validation = validateUrl(req.url);
+  if (!validation.valid) {
+    return c.json({ error: { code: 'BAD_REQUEST', message: validation.error } }, 400);
+  }
+  
+  // Check domain rate limit
+  try {
+    const domain = new URL(validation.normalizedUrl!).hostname;
+    const rateLimit = checkDomainRateLimit(domain);
+    if (!rateLimit.allowed) {
+      return c.json({ 
+        error: { 
+          code: 'RATE_LIMITED', 
+          message: `Rate limit exceeded for domain ${domain}. Retry after ${rateLimit.retryAfter} seconds.` 
+        } 
+      }, 429);
+    }
+  } catch {
+    // Continue if domain extraction fails
+  }
+  
   const id = uuidv4();
 
   insertAudit({
     id,
-    requested_url: req.url,
+    requested_url: validation.normalizedUrl || req.url,
     profile: req.profile ?? 'smart',
     status: 'queued',
     created_at: new Date().toISOString(),
