@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.7.0",
+  "audit_id": "c3430b4c-bdcf-4e85-84d5-59fe44e92320",
+  "url": "https://mahoorab.com/",
+  "profile": "full",
+  "started_at": "2026-02-15T18:08:48.986Z",
+  "finished_at": "2026-02-15T18:10:39.603Z",
+  "duration_ms": 110617,
+  "duration_minutes": "1.84",
+  "coverage": {
+    "mode": "crawl",
+    "checked_pages": 120,
+    "discovered_pages": 269,
+    "estimated_total_pages": 136,
+    "checked_ratio": 0.8823529411764706,
+    "link_checks": 400
+  },
+  "pages_count": 120,
+  "issues_count": 0,
+  "links_count": 0
+}

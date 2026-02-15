@@ -129,13 +129,11 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     }
   }
 
-  const scores = scoreSite(crawl.pages as any, totals, lang, siteType);
-  const { findings, top_issues: topIssues, quick_wins: quickWins } = buildFindings(lang, crawl.pages as any, scores);
-
   // Calculate content freshness from WP API data
   let freshnessData: FreshnessData | undefined;
   let freshnessFindings: Finding[] = [];
-  
+  let freshnessScoreData: { score: number; stale_count: number; total_items: number } | undefined;
+
   if (wpData.available && wpData.contentItems.length > 0) {
     const score = calculateFreshnessScore(wpData.lastModifiedDates, 6);
     freshnessData = {
@@ -143,7 +141,16 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
       recommendations: getFreshnessRecommendations(wpData.contentItems, lang),
     };
     freshnessFindings = buildFreshnessFindings(lang, wpData.contentItems);
+    freshnessScoreData = {
+      score,
+      stale_count: freshnessData.stale_count,
+      total_items: wpData.totalItems,
+    };
   }
+
+  // Score site with freshness data included
+  const scores = scoreSite(crawl.pages as any, totals, lang, siteType, freshnessScoreData);
+  const { findings, top_issues: topIssues, quick_wins: quickWins } = buildFindings(lang, crawl.pages as any, scores);
 
   // Merge freshness findings with regular findings
   const allFindings = [...findings, ...freshnessFindings];
