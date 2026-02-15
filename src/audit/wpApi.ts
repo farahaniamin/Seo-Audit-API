@@ -6,6 +6,25 @@ const WP_API_DELAY = 600; // ms between requests (100 req/min max)
 const MAX_WP_PAGES = 10;  // Max pagination requests (1000 items total with per_page=100)
 const WP_API_TIMEOUT = 5000; // 5 second timeout for API detection
 
+/**
+ * Extract JSON from response that may contain PHP warnings/notices before JSON
+ * Some WordPress sites output errors before JSON data
+ */
+function extractJsonFromText(text: string): any | null {
+  // Find the first occurrence of "{" or "[" which indicates JSON start
+  const jsonStart = text.search(/^[\s\S]*?(\{|\[)/);
+  if (jsonStart === -1) return null;
+  
+  // Extract from the JSON start marker
+  const jsonText = text.substring(jsonStart);
+  
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    return null;
+  }
+}
+
 export type WpPostType = {
   slug: string;
   name: string;
@@ -42,23 +61,14 @@ function sleep(ms: number) {
  * Detect if WordPress REST API is available
  * Returns true if /wp-json/ endpoint responds successfully
  */
-export async function detectWpApi(origin: string): Promise<boolean> {
+export async function detectWpApi(origin: string, limits?: Limits): Promise<boolean> {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), WP_API_TIMEOUT);
+    const timeoutMs = limits?.per_page_timeout_ms || WP_API_TIMEOUT;
+    const result = await fetchText(`${origin}/wp-json/`, timeoutMs, 50000);
     
-    const response = await fetch(`${origin}/wp-json/`, {
-      signal: controller.signal,
-      headers: {
-        'Accept': 'application/json',
-      }
-    });
+    if (result.status < 200 || result.status >= 400) return false;
     
-    clearTimeout(timeout);
-    
-    if (!response.ok) return false;
-    
-    const data = await response.json();
+    const data = extractJsonFromText(result.text);
     // Verify it's actually WP REST API
     return data && data.namespaces && data.namespaces.includes('wp/v2');
   } catch {
@@ -69,12 +79,14 @@ export async function detectWpApi(origin: string): Promise<boolean> {
 /**
  * Fetch all available post types from WP API
  */
-async function fetchPostTypes(origin: string): Promise<WpPostType[]> {
+async function fetchPostTypes(origin: string, limits: Limits): Promise<WpPostType[]> {
   try {
-    const response = await fetch(`${origin}/wp-json/wp/v2/types`);
-    if (!response.ok) return [];
+    const result = await fetchText(`${origin}/wp-json/wp/v2/types`, limits.per_page_timeout_ms, 50000);
+    if (result.status < 200 || result.status >= 400) return [];
     
-    const data = await response.json();
+    const data = extractJsonFromText(result.text);
+    if (!data) return [];
+    
     return Object.values(data).map((type: any) => ({
       slug: type.slug,
       name: type.name,
@@ -96,39 +108,36 @@ async function fetchPaginatedContent(
   const items: any[] = [];
   let page = 1;
   let hasMore = true;
-  
+
   while (hasMore && page <= MAX_WP_PAGES) {
     try {
       // Rate limiting
       if (page > 1) await sleep(WP_API_DELAY);
-      
+
       const url = `${origin}/wp-json/wp/v2/${endpoint}?per_page=100&page=${page}&_fields=id,link,modified,status,type,title,date`;
-      const response = await fetch(url, {
-        headers: { 'Accept': 'application/json' }
-      });
-      
-      if (!response.ok) break;
-      
-      const data = await response.json();
+      const result = await fetchText(url, limits.per_page_timeout_ms, 500000);
+
+      if (result.status < 200 || result.status >= 400) break;
+
+      const data = extractJsonFromText(result.text);
       if (!Array.isArray(data) || data.length === 0) {
         hasMore = false;
         break;
       }
-      
+
       items.push(...data);
-      
-      // Check if there are more pages from headers
-      const totalPages = parseInt(response.headers.get('X-WP-TotalPages') || '0');
-      if (page >= totalPages) {
+
+      // If we got fewer than 100 items, we've reached the end
+      if (data.length < 100) {
         hasMore = false;
       }
-      
+
       page++;
     } catch {
       break;
     }
   }
-  
+
   return items;
 }
 
@@ -169,12 +178,14 @@ async function fetchAllContent(
 /**
  * Fetch available taxonomies from WP API
  */
-async function fetchTaxonomies(origin: string): Promise<string[]> {
+async function fetchTaxonomies(origin: string, limits: Limits): Promise<string[]> {
   try {
-    const response = await fetch(`${origin}/wp-json/wp/v2/taxonomies`);
-    if (!response.ok) return [];
-    
-    const data = await response.json();
+    const result = await fetchText(`${origin}/wp-json/wp/v2/taxonomies`, limits.per_page_timeout_ms, 50000);
+    if (result.status < 200 || result.status >= 400) return [];
+
+    const data = extractJsonFromText(result.text);
+    if (!data) return [];
+
     return Object.keys(data);
   } catch {
     return [];
@@ -190,8 +201,8 @@ export async function fetchWpData(
   limits: Limits
 ): Promise<WpApiData> {
   // First, check if WP API is available
-  const isAvailable = await detectWpApi(origin);
-  
+  const isAvailable = await detectWpApi(origin, limits);
+
   if (!isAvailable) {
     return {
       available: false,
@@ -204,16 +215,16 @@ export async function fetchWpData(
       draftCount: 0,
     };
   }
-  
+
   try {
     // Fetch post types
-    const postTypes = await fetchPostTypes(origin);
-    
+    const postTypes = await fetchPostTypes(origin, limits);
+
     // Fetch all content
     const contentItems = await fetchAllContent(origin, postTypes, limits);
-    
+
     // Fetch taxonomies
-    const taxonomies = await fetchTaxonomies(origin);
+    const taxonomies = await fetchTaxonomies(origin, limits);
     
     // Calculate post type distribution
     const postTypeDistribution: Record<string, number> = {};
