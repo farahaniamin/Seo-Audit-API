@@ -88,3 +88,79 @@ export function claimNextQueued(): { id: string } | null {
   if (!ok) return null;
   return { id: row.id };
 }
+
+/**
+ * Delete old audits and their reports (GDPR compliance / data retention)
+ * @param maxAgeDays - Delete audits older than this many days (default: 90)
+ * @returns Number of audits deleted
+ */
+export function deleteOldAudits(maxAgeDays: number = 90): number {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - maxAgeDays);
+  const cutoffIso = cutoffDate.toISOString();
+
+  // First delete associated reports
+  const reportsDeleted = db.prepare(`
+    DELETE FROM reports 
+    WHERE audit_id IN (
+      SELECT id FROM audits WHERE created_at < ?
+    )
+  `).run(cutoffIso).changes;
+
+  // Then delete old audits
+  const auditsDeleted = db.prepare(`
+    DELETE FROM audits WHERE created_at < ?
+  `).run(cutoffIso).changes;
+
+  console.log(`Data retention cleanup: deleted ${auditsDeleted} audits and ${reportsDeleted} reports (older than ${maxAgeDays} days)`);
+  return auditsDeleted;
+}
+
+/**
+ * Get audit statistics
+ */
+export function getAuditStats(): {
+  total: number;
+  queued: number;
+  running: number;
+  done: number;
+  failed: number;
+  oldestAudit?: string;
+} {
+  const total = db.prepare('SELECT COUNT(*) as count FROM audits').get() as { count: number };
+  const queued = db.prepare(`SELECT COUNT(*) as count FROM audits WHERE status='queued'`).get() as { count: number };
+  const running = db.prepare(`SELECT COUNT(*) as count FROM audits WHERE status='running'`).get() as { count: number };
+  const done = db.prepare(`SELECT COUNT(*) as count FROM audits WHERE status='done'`).get() as { count: number };
+  const failed = db.prepare(`SELECT COUNT(*) as count FROM audits WHERE status='failed'`).get() as { count: number };
+  const oldest = db.prepare('SELECT MIN(created_at) as date FROM audits').get() as { date: string } | undefined;
+
+  return {
+    total: total.count,
+    queued: queued.count,
+    running: running.count,
+    done: done.count,
+    failed: failed.count,
+    oldestAudit: oldest?.date,
+  };
+}
+
+/**
+ * Clean up stale running audits (e.g., after server crash)
+ * Resets audits stuck in 'running' state for > 1 hour back to 'queued'
+ */
+export function cleanupStaleRunningAudits(maxRunningMinutes: number = 60): number {
+  const cutoffDate = new Date();
+  cutoffDate.setMinutes(cutoffDate.getMinutes() - maxRunningMinutes);
+  const cutoffIso = cutoffDate.toISOString();
+
+  const updated = db.prepare(`
+    UPDATE audits 
+    SET status='queued', started_at=NULL 
+    WHERE status='running' AND (started_at < ? OR started_at IS NULL)
+  `).run(cutoffIso).changes;
+
+  if (updated > 0) {
+    console.log(`Cleaned up ${updated} stale running audits (running > ${maxRunningMinutes} minutes)`);
+  }
+  return updated;
+}
