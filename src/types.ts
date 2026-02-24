@@ -109,6 +109,12 @@ export type PageReport = {
   h1_count: number;
   images_missing_alt: number;
   issues: string[];
+  // Phase 1: New quality metrics
+  has_viewport?: boolean;
+  word_count?: number;
+  is_https?: boolean;
+  has_mixed_content?: boolean;
+  ttfb_ms?: number;
 };
 
 export type Report = {

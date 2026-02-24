@@ -171,8 +171,26 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     note: profile === 'smart' ? 'sample-based' : undefined
   } as const;
 
-  const text_fa = buildTelegram('fa', { url, overall: scores.overall_score, coverage, topIssues, quickWins });
-  const text_en = buildTelegram('en', { url, overall: scores.overall_score, coverage, topIssues, quickWins });
+  const text_fa = buildTelegram('fa', { 
+    url, 
+    overall: scores.overall_score, 
+    coverage, 
+    topIssues, 
+    quickWins,
+    pillars: scores.pillars,
+    wpData: wpData.available ? wpData : undefined,
+    freshnessData
+  });
+  const text_en = buildTelegram('en', { 
+    url, 
+    overall: scores.overall_score, 
+    coverage, 
+    topIssues, 
+    quickWins,
+    pillars: scores.pillars,
+    wpData: wpData.available ? wpData : undefined,
+    freshnessData
+  });
 
   const pages_with_issues = crawl.pages
     .filter((p) => (p.issues?.length ?? 0) > 0)

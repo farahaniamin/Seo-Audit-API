@@ -35,7 +35,13 @@ const ISSUE_DEFS: IssueDef[] = [
   
   // Freshness issue (from WP API analysis)
   { id: 'C01', pillar: 'freshness', weight: 15, severity: 'high', max_ratio: 1.0 }, // stale content (>6 months)
-  // Note: C02 (thin content types) is tracked as a finding but not scored since we don't measure actual content depth
+  
+  // Phase 1: New issues
+  { id: 'M01', pillar: 'technical', weight: 12, severity: 'high', quick_win: true, max_ratio: 1.0 }, // Missing mobile viewport - critical for mobile-first indexing
+  { id: 'C03', pillar: 'onpage', weight: 8, severity: 'medium', max_ratio: 0.9 }, // Thin content (<300 words) - quality issue
+  { id: 'S01', pillar: 'technical', weight: 15, severity: 'critical', quick_win: true, max_ratio: 1.0 }, // Not using HTTPS - security & ranking factor
+  { id: 'S02', pillar: 'technical', weight: 10, severity: 'high', quick_win: true, max_ratio: 0.8 }, // Mixed content - security warning
+  { id: 'P01', pillar: 'technical', weight: 6, severity: 'medium', max_ratio: 0.7 }, // Slow TTFB (>800ms) - performance issue
 ];
 
 const SEVERITY_MULT: Record<Severity, number> = {

@@ -40,3 +40,28 @@ export function countImagesMissingAlt(html: string): number {
 function strip(s: string) {
   return s.replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
 }
+
+export function hasViewportMeta(html: string): boolean {
+  // Check for viewport meta tag
+  const viewportMatch = html.match(/<meta[^>]+name=["']viewport["'][^>]*>/i);
+  return !!viewportMatch;
+}
+
+export function countWords(html: string): number {
+  // Extract text content
+  const text = strip(html);
+  // Count words (split by whitespace and filter empty strings)
+  const words = text.split(/\s+/).filter(w => w.length > 0);
+  return words.length;
+}
+
+export function extractJsonLd(html: string): string[] {
+  // Extract all JSON-LD structured data
+  const jsonLdRegex = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  const scripts: string[] = [];
+  let match;
+  while ((match = jsonLdRegex.exec(html)) !== null) {
+    scripts.push(match[1].trim());
+  }
+  return scripts;
+}

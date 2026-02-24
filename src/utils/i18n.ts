@@ -18,6 +18,15 @@ const STR: Record<Lang, Record<string,string>> = {
     grade_bad: 'Critical',
     not_ready: 'Report not ready yet',
     not_found: 'Audit not found',
+    grade: 'Grade',
+    ratio: 'Ratio',
+    wp_info: 'WordPress Info',
+    total: 'Total',
+    items: 'items',
+    freshness: 'Content Freshness',
+    stale_content: 'Stale content',
+    latest_products: 'Latest Products',
+    latest_posts: 'Latest Posts',
 
     // Issue titles
     'issue.E01.title': 'Pages set to noindex',
@@ -29,6 +38,11 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.F07.title': 'Missing H1',
     'issue.F08.title': 'Multiple H1 tags',
     'issue.G01.title': 'Images missing alt text',
+    'issue.M01.title': 'Missing mobile viewport',
+    'issue.C03.title': 'Thin content (<300 words)',
+    'issue.S01.title': 'Not using HTTPS',
+    'issue.S02.title': 'Mixed content (HTTP on HTTPS)',
+    'issue.P01.title': 'Slow server response (>800ms)',
 
     // Issue descriptions
     'issue.E01.desc': 'Pages marked as noindex (meta robots or X-Robots-Tag) may not appear in Google results. Ensure only pages you truly want hidden are noindex.',
@@ -39,7 +53,12 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.F04.desc': 'Meta description is missing or too short. Write helpful snippets to improve CTR.',
     'issue.F07.desc': 'Missing H1 can weaken page clarity. Add one clear H1 per page.',
     'issue.F08.desc': 'Multiple H1 tags can reduce clarity. Prefer a single main H1.',
-    'issue.G01.desc': 'Alt text improves accessibility and image search understanding. Add meaningful alt text for informative images.'
+    'issue.G01.desc': 'Alt text improves accessibility and image search understanding. Add meaningful alt text for informative images.',
+    'issue.M01.desc': 'Missing viewport meta tag prevents proper mobile rendering. Google uses mobile-first indexing, so this is critical.',
+    'issue.C03.desc': 'Pages with less than 300 words of content may be considered thin content. Add more valuable, unique content.',
+    'issue.S01.desc': 'Not using HTTPS is a security risk and ranking factor. Migrate to HTTPS with a valid SSL certificate.',
+    'issue.S02.desc': 'Loading HTTP resources on HTTPS pages triggers browser security warnings. Update all links to use HTTPS.',
+    'issue.P01.desc': 'Time to First Byte (TTFB) over 800ms indicates slow server response. Optimize server configuration or upgrade hosting.'
   },
   fa: {
     audit_complete: 'نتایج بررسی سئو',
@@ -58,6 +77,15 @@ const STR: Record<Lang, Record<string,string>> = {
     grade_bad: 'بحرانی',
     not_ready: 'گزارش هنوز آماده نیست',
     not_found: 'گزارش پیدا نشد',
+    grade: 'رتبه',
+    ratio: 'نسبت',
+    wp_info: 'اطلاعات WordPress',
+    total: 'مجموع',
+    items: 'آیتم',
+    freshness: 'تازگی محتوا',
+    stale_content: 'محتوای قدیمی',
+    latest_products: 'آخرین محصولات',
+    latest_posts: 'آخرین پست‌ها',
 
     // Issue titles
     'issue.E01.title': 'صفحات دارای noindex',
@@ -69,6 +97,11 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.F07.title': 'H1 وجود ندارد',
     'issue.F08.title': 'چندین H1 در صفحه',
     'issue.G01.title': 'تصاویر بدون alt',
+    'issue.M01.title': 'viewport موبایل وجود ندارد',
+    'issue.C03.title': 'محتوای نازک (<300 کلمه)',
+    'issue.S01.title': 'HTTPS فعال نیست',
+    'issue.S02.title': 'محتوای ترکیبی (HTTP روی HTTPS)',
+    'issue.P01.title': 'پاسخ سرور کند (>800ms)',
 
     // Issue descriptions
     'issue.E01.desc': 'اگر صفحه noindex باشد (meta robots یا X-Robots-Tag)، احتمالاً در نتایج گوگل نمایش داده نمی‌شود. فقط صفحاتی که واقعاً نمی‌خواهید ایندکس شوند را noindex کنید.',
@@ -79,7 +112,12 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.F04.desc': 'Meta description وجود ندارد یا خیلی کوتاه است. برای بهبود CTR توضیح مفید بنویسید.',
     'issue.F07.desc': 'نبودن H1 می‌تواند شفافیت موضوع صفحه را کم کند. یک H1 واضح اضافه کنید.',
     'issue.F08.desc': 'وجود چند H1 می‌تواند شفافیت را کم کند. بهتر است یک H1 اصلی داشته باشید.',
-    'issue.G01.desc': 'Alt به دسترسی‌پذیری و درک تصاویر توسط موتور جستجو کمک می‌کند. برای تصاویر مهم alt معنادار بنویسید.'
+    'issue.G01.desc': 'Alt به دسترسی‌پذیری و درک تصاویر توسط موتور جستجو کمک می‌کند. برای تصاویر مهم alt معنادار بنویسید.',
+    'issue.M01.desc': 'عدم وجود viewport متا تگ باعث نمایش نامناسب در موبایل می‌شود. گوگل از mobile-first indexing استفاده می‌کند.',
+    'issue.C03.desc': 'صفحات با کمتر از 300 کلمه محتوا ممکن است به عنوان محتوای نازک در نظر گرفته شوند. محتوای ارزشمندتر اضافه کنید.',
+    'issue.S01.desc': 'عدم استفاده از HTTPS خطر امنیتی است و فاکتور رتبه‌بندی. با گواهی SSL معتبر به HTTPS مهاجرت کنید.',
+    'issue.S02.desc': 'بارگذاری منابع HTTP روی صفحات HTTPS هشدار امنیتی مرورگر را فعال می‌کند. همه لینک‌ها را به HTTPS به‌روزرسانی کنید.',
+    'issue.P01.desc': 'Time to First Byte (TTFB) بیشتر از 800ms نشان‌دهنده پاسخ کند سرور است. تنظیمات سرور را بهینه کنید یا هاست را ارتقا دهید.'
   }
 };
 
@@ -93,7 +131,14 @@ const CHECK: Record<Lang, Record<string,string>> = {
     F04: 'Missing meta description',
     F07: 'Missing H1',
     F08: 'Multiple H1 tags',
-    G01: 'Images missing alt text'
+    G01: 'Images missing alt text',
+    C01: 'Stale content',
+    C02: 'Thin content',
+    M01: 'Missing mobile viewport',
+    C03: 'Thin content (<300 words)',
+    S01: 'Not using HTTPS',
+    S02: 'Mixed content',
+    P01: 'Slow server response'
   },
   fa: {
     E01: 'صفحات دارای noindex',
@@ -104,7 +149,14 @@ const CHECK: Record<Lang, Record<string,string>> = {
     F04: 'meta description وجود ندارد',
     F07: 'H1 وجود ندارد',
     F08: 'چندین H1 در صفحه',
-    G01: 'تصاویر بدون alt'
+    G01: 'تصاویر بدون alt',
+    C01: 'محتوای قدیمی',
+    C02: 'محتوای نازک',
+    M01: 'viewport موبایل وجود ندارد',
+    C03: 'محتوای نازک (<300 کلمه)',
+    S01: 'HTTPS فعال نیست',
+    S02: 'محتوای ترکیبی',
+    P01: 'پاسخ سرور کند'
   }
 };
 

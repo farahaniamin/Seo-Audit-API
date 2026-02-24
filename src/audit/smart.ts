@@ -1,7 +1,7 @@
 import PQueue from 'p-queue';
 import { fetchHtml } from './fetcher.js';
 import { extractInternalLinks } from './linkcheck.js';
-import { extractCanonical, extractH1Count, extractMetaDescription, extractTitle, extractMetaRobots, countImagesMissingAlt } from './html.js';
+import { extractCanonical, extractH1Count, extractMetaDescription, extractTitle, extractMetaRobots, countImagesMissingAlt, hasViewportMeta, countWords } from './html.js';
 import type { Limits } from '../types.js';
 import { isCrawlableUrl, normalizeUrl, sameCanonical } from './url.js';
 import type { SiteType } from './siteType.js';
@@ -20,6 +20,12 @@ export type Page = {
   images_missing_alt: number;
   links_internal: string[];
   issues?: string[];
+  // Phase 1: Quality metrics
+  has_viewport?: boolean;
+  word_count?: number;
+  is_https?: boolean;
+  has_mixed_content?: boolean;
+  ttfb_ms?: number;
 };
 
 function originOf(u: string) {
@@ -133,6 +139,17 @@ export async function smartSample(startUrl: string, limits: Limits, candidates: 
     const metaRobots = html ? extractMetaRobots(html) : null;
     const h1 = html ? extractH1Count(html) : 0;
     const missingAlt = html ? countImagesMissingAlt(html) : 0;
+    const hasViewport = html ? hasViewportMeta(html) : false;
+    const wordCount = html ? countWords(html) : 0;
+    
+    // Check for mixed content (http links on https page)
+    let hasMixedContent = false;
+    if (html && res.finalUrl?.startsWith('https://')) {
+      const httpLinks = html.match(/href=["']http:\/\//gi);
+      if (httpLinks && httpLinks.length > 0) {
+        hasMixedContent = true;
+      }
+    }
 
     const links_internal = html
       ? extractInternalLinks(html, res.finalUrl ?? url, limits.max_links_per_page)
@@ -157,8 +174,13 @@ export async function smartSample(startUrl: string, limits: Limits, candidates: 
       x_robots_tag: (res.headers?.['x-robots-tag'] ?? null) as any,
       h1_count: h1,
       images_missing_alt: missingAlt,
-      links_internal
-
+      links_internal,
+      // Phase 1: Quality metrics
+      has_viewport: hasViewport,
+      word_count: wordCount,
+      is_https: res.finalUrl?.startsWith('https://') ?? false,
+      has_mixed_content: hasMixedContent,
+      ttfb_ms: res.ttfbMs
     };
 
     // Issue detection
@@ -173,6 +195,14 @@ export async function smartSample(startUrl: string, limits: Limits, candidates: 
     if (page.h1_count === 0) issues.push('F07');
     if (page.h1_count > 1) issues.push('F08');
     if (page.images_missing_alt > 0) issues.push('G01');
+    
+    // Phase 1: New issues
+    if (!page.has_viewport) issues.push('M01'); // Missing mobile viewport
+    if ((page.word_count ?? 0) < 300) issues.push('C03'); // Thin content (<300 words)
+    if (!page.is_https) issues.push('S01'); // Not using HTTPS
+    if (page.has_mixed_content) issues.push('S02'); // Mixed content (http on https)
+    if ((page.ttfb_ms ?? 0) > 800) issues.push('P01'); // Slow TTFB (>800ms)
+    
     page.issues = issues;
 
     // Deduplicate: use Set for atomic check (prevents race conditions with concurrent fetches)
