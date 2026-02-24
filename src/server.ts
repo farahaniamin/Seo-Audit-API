@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { AuditCreateRequest } from './types.js';
 import { inferLang, t } from './utils/i18n.js';
 import { renderReportPdf } from './audit/pdf.js';
+import { generateHtmlReport } from './audit/htmlReport.js';
 import { serve } from '@hono/node-server';
 import { validateUrl, checkDomainRateLimit } from './audit/validation.js';
 import { performHealthCheck, getSystemMetrics } from './monitoring/health.js';
@@ -147,6 +148,24 @@ app.get('/v1/audits/:id/telegram', (c) => {
     overall_score: report.scores?.overall,
     pdf_url: `/v1/audits/${report.audit_id}/report.pdf?lang=${lang}`
   });
+});
+
+app.get('/v1/audits/:id/report.html', (c) => {
+  const id = c.req.param('id');
+  const lang = inferLang(c.req.query('lang'), c.req.header('accept-language')) as 'en' | 'fa';
+
+  const rep = getReport(id);
+  if (!rep) {
+    const row = getAudit(id);
+    if (!row) return c.json({ error: { code: 'NOT_FOUND', message: t(lang,'not_found') } }, 404);
+    return c.json({ error: { code: 'NOT_READY', message: t(lang,'not_ready') } }, 409);
+  }
+
+  const report = JSON.parse(rep.report_json);
+  const html = generateHtmlReport(report, lang);
+
+  c.header('Content-Type', 'text/html; charset=utf-8');
+  return c.body(html);
 });
 
 const port = envInt('PORT', 8787);
