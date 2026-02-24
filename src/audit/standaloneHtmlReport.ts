@@ -225,6 +225,14 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
     .severity-medium { background: #fef3c7; color: #92400e; }
     .severity-low { background: #dbeafe; color: #1e40af; }
     
+    /* Clickable Issue Rows */
+    .issue-row {
+      transition: background-color 0.2s;
+    }
+    .issue-row:hover {
+      background-color: #f9fafb;
+    }
+    
     /* Lighthouse Metrics */
     .metrics-grid {
       display: grid;
@@ -296,7 +304,7 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
         <div>
           <div class="grade-badge" style="background: ${gradeColor}20; color: ${gradeColor};">
             <span style="width: 8px; height: 8px; border-radius: 50%; background: ${gradeColor};"></span>
-            ${grade}
+            ${grade} - ${getGradeLabel(overallScore)}
           </div>
           <h2 style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">
             Overall score: ${overallScore.toFixed(1)}/100
@@ -344,7 +352,11 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
     
     ${generateChartsSection(pillars, critical, high, medium, low, lighthouse, lang)}
     
+    ${generateScoringMethodologySection(report.scores?.breakdown?.scoring_methodology, lang)}
+    
     ${generateIssuesSection(findings, lang)}
+    
+    ${generateIssueThresholdsSection(lang)}
     
     ${hasLighthouse ? generateLighthouseSection(lighthouse, lang) : ''}
     
@@ -551,24 +563,36 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
 }
 
 // Helper functions
+// Unified grade scale: A(90+), B(80+), C(70+), D(60+), F(<60)
 function getGrade(score: number): string {
+  if (score >= 90) return 'A';
+  if (score >= 80) return 'B';
+  if (score >= 70) return 'C';
+  if (score >= 60) return 'D';
+  return 'F';
+}
+
+function getGradeLabel(score: number): string {
   if (score >= 90) return 'Excellent';
-  if (score >= 75) return 'Good';
-  if (score >= 60) return 'Fair';
+  if (score >= 80) return 'Good';
+  if (score >= 70) return 'Fair';
+  if (score >= 60) return 'Needs Work';
   return 'Poor';
 }
 
 function getGradeColor(score: number): string {
-  if (score >= 90) return '#10b981';
-  if (score >= 75) return '#3b82f6';
-  if (score >= 60) return '#f59e0b';
-  return '#ef4444';
+  if (score >= 90) return '#10b981'; // Green
+  if (score >= 80) return '#3b82f6'; // Blue
+  if (score >= 70) return '#f59e0b'; // Orange
+  if (score >= 60) return '#f97316'; // Dark Orange
+  return '#ef4444'; // Red
 }
 
 function getScoreColor(score: number): string {
   if (score >= 90) return '#10b981';
-  if (score >= 75) return '#3b82f6';
-  if (score >= 60) return '#f59e0b';
+  if (score >= 80) return '#3b82f6';
+  if (score >= 70) return '#f59e0b';
+  if (score >= 60) return '#f97316';
   return '#ef4444';
 }
 
@@ -641,16 +665,50 @@ function generateChartsSection(pillars: any, critical: any[], high: any[], mediu
 function generateIssuesSection(findings: any[], lang: 'en' | 'fa'): string {
   if (findings.length === 0) return '';
   
-  const rows = findings.slice(0, 10).map(finding => {
+  const isRTL = lang === 'fa';
+  
+  const rows = findings.map((finding, index) => {
     const prevalence = finding.prevalence || (finding.checked_pages ? finding.affected_pages / finding.checked_pages : 0);
     const prevalencePct = (prevalence * 100).toFixed(1);
+    const hasExamples = finding.example_urls && finding.example_urls.length > 0;
+    const exampleCount = finding.example_urls?.length || 0;
+    
+    // Create expandable page list HTML
+    let pageListHtml = '';
+    if (hasExamples) {
+      const displayUrls = finding.example_urls.slice(0, 10);
+      const remainingCount = exampleCount - 10;
+      
+      pageListHtml = `
+        <div id="pages-${finding.id}" style="display: none; margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 6px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">
+            ${isRTL ? `صفحات دارای این مشکل (${exampleCount} مورد):` : `Pages with this issue (${exampleCount} total):`}
+          </div>
+          <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #374151; line-height: 1.8;">
+            ${displayUrls.map((url: string) => `<li><a href="${escapeHtml(url)}" target="_blank" style="color: #3b82f6; text-decoration: none;">${escapeHtml(url)}</a></li>`).join('')}
+          </ul>
+          ${remainingCount > 0 ? `
+            <div style="margin-top: 8px; font-size: 11px; color: #9ca3af; font-style: italic;">
+              ${isRTL ? `و ${remainingCount} مورد دیگر...` : `And ${remainingCount} more...`}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
     
     return `
-    <tr>
+    <tr style="cursor: ${hasExamples ? 'pointer' : 'default'};" onclick="${hasExamples ? `togglePages('${finding.id}')` : ''}" class="issue-row">
       <td><span class="severity-badge severity-${finding.severity}">${finding.severity}</span></td>
       <td><strong>${finding.id}</strong></td>
-      <td>${escapeHtml(finding.title || finding.id)}</td>
-      <td>${finding.affected_pages}</td>
+      <td>
+        <div>${escapeHtml(finding.title || finding.id)}</div>
+        ${finding.description ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${escapeHtml(finding.description)}</div>` : ''}
+        ${finding.weight ? `<div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">Weight: ${finding.weight} | Penalty: ${finding.penalty?.toFixed(2) || 'N/A'}</div>` : ''}
+      </td>
+      <td>
+        ${finding.affected_pages}
+        ${hasExamples ? `<div style="font-size: 11px; color: #3b82f6;">${isRTL ? '(برای مشاهده کلیک کنید)' : '(click to view)'}</div>` : ''}
+      </td>
       <td>
         <div style="display: flex; align-items: center; gap: 8px;">
           <div style="flex: 1; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
@@ -658,6 +716,7 @@ function generateIssuesSection(findings: any[], lang: 'en' | 'fa'): string {
           </div>
           <span style="font-size: 12px; color: #6b7280; min-width: 45px;">${prevalencePct}%</span>
         </div>
+        ${pageListHtml}
       </td>
     </tr>
     `;
@@ -665,21 +724,36 @@ function generateIssuesSection(findings: any[], lang: 'en' | 'fa'): string {
   
   return `
   <div class="section">
-    <h2 class="section-title">${lang === 'fa' ? 'مشکلات' : 'Issues'}</h2>
+    <h2 class="section-title">${isRTL ? 'مشکلات یافت شده' : 'Detected Issues'}</h2>
+    <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">
+      ${isRTL 
+        ? 'برای مشاهده صفحات دارای هر مشکل، روی ردیف آن کلیک کنید. هر مشکل دارای وزن و جریمه مشخص است.'
+        : 'Click on any issue row to see affected pages. Each issue has a specific weight and penalty impact.'}
+    </p>
     <table class="issues-table">
       <thead>
         <tr>
-          <th>${lang === 'fa' ? 'شدت' : 'Severity'}</th>
-          <th>${lang === 'fa' ? 'کد' : 'Code'}</th>
-          <th>${lang === 'fa' ? 'عنوان' : 'Title'}</th>
-          <th>${lang === 'fa' ? 'صفحات' : 'Pages'}</th>
-          <th>${lang === 'fa' ? 'نسبت' : 'Ratio'}</th>
+          <th>${isRTL ? 'شدت' : 'Severity'}</th>
+          <th>${isRTL ? 'کد' : 'Code'}</th>
+          <th>${isRTL ? 'مشکل / توضیحات' : 'Issue / Description'}</th>
+          <th>${isRTL ? 'صفحات' : 'Pages'}</th>
+          <th>${isRTL ? 'نسبت' : 'Ratio'}</th>
         </tr>
       </thead>
       <tbody>
         ${rows}
       </tbody>
     </table>
+    
+    <script>
+      function togglePages(issueId) {
+        const pagesDiv = document.getElementById('pages-' + issueId);
+        if (pagesDiv) {
+          const isVisible = pagesDiv.style.display !== 'none';
+          pagesDiv.style.display = isVisible ? 'none' : 'block';
+        }
+      }
+    </script>
   </div>
   `;
 }
@@ -763,6 +837,157 @@ function generateFreshnessSection(freshness: any, lang: 'en' | 'fa'): string {
     <p style="color: #6b7280; margin-bottom: 16px;">
       ${lang === 'fa' ? 'محتوای قدیمی:' : 'Stale content:'} <strong style="color: ${color};">${freshness.stale_count || 0}</strong>
     </p>
+  </div>
+  `;
+}
+
+function generateScoringMethodologySection(methodology: any, lang: 'en' | 'fa'): string {
+  if (!methodology) return '';
+  
+  const isRTL = lang === 'fa';
+  
+  return `
+  <div class="section">
+    <h2 class="section-title">${isRTL ? 'نحوه محاسبه امتیازات' : 'How Scores Are Calculated'}</h2>
+    
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #374151;">
+        ${isRTL ? 'مقیاس نمره‌دهی' : 'Grade Scale'}
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+        <div style="background: #dcfce7; padding: 8px 12px; border-radius: 6px; text-align: center;">
+          <div style="font-weight: 600; color: #166534;">A (90-100)</div>
+          <div style="font-size: 12px; color: #15803d;">${isRTL ? 'عالی' : 'Excellent'}</div>
+        </div>
+        <div style="background: #dbeafe; padding: 8px 12px; border-radius: 6px; text-align: center;">
+          <div style="font-weight: 600; color: #1e40af;">B (80-89)</div>
+          <div style="font-size: 12px; color: #1d4ed8;">${isRTL ? 'خوب' : 'Good'}</div>
+        </div>
+        <div style="background: #fef3c7; padding: 8px 12px; border-radius: 6px; text-align: center;">
+          <div style="font-weight: 600; color: #92400e;">C (70-79)</div>
+          <div style="font-size: 12px; color: #b45309;">${isRTL ? 'متوسط' : 'Fair'}</div>
+        </div>
+        <div style="background: #ffedd5; padding: 8px 12px; border-radius: 6px; text-align: center;">
+          <div style="font-weight: 600; color: #9a3412;">D (60-69)</div>
+          <div style="font-size: 12px; color: #c2410c;">${isRTL ? 'نیاز به بهبود' : 'Needs Work'}</div>
+        </div>
+        <div style="background: #fee2e2; padding: 8px 12px; border-radius: 6px; text-align: center;">
+          <div style="font-weight: 600; color: #991b1b;">F (0-59)</div>
+          <div style="font-size: 12px; color: #dc2626;">${isRTL ? 'ضعیف' : 'Poor'}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #374151;">
+        ${isRTL ? 'فرمول‌های محاسبه' : 'Calculation Formulas'}
+      </h3>
+      
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 500; color: #6b7280; margin-bottom: 4px;">
+          ${isRTL ? 'امتیاز کلی:' : 'Overall Score:'}
+        </div>
+        <div style="background: white; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #374151;">
+          ${isRTL ? 'میانگین وزنی ۶ محور اصلی' : 'Weighted average of 6 pillar scores'}
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 500; color: #6b7280; margin-bottom: 4px;">
+          ${isRTL ? 'محورهای محتوا/فنی/خزش/ایندکس:' : 'Content/Technical/Crawl/Index Pillars:'}
+        </div>
+        <div style="background: white; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #374151;">
+          Score = 100 - Σ(issue penalties)
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 500; color: #6b7280; margin-bottom: 4px;">
+          ${isRTL ? 'محور تازگی:' : 'Freshness Pillar:'}
+        </div>
+        <div style="background: white; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #374151;">
+          ${escapeHtml(methodology.freshness_formula || (isRTL ? 'بر اساس توزیع سن محتوا' : 'Based on content age distribution'))}
+        </div>
+      </div>
+      
+      <div>
+        <div style="font-weight: 500; color: #6b7280; margin-bottom: 4px;">
+          ${isRTL ? 'محور عملکرد:' : 'Performance Pillar:'}
+        </div>
+        <div style="background: white; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #374151;">
+          ${escapeHtml(methodology.performance_formula || (isRTL ? 'ترکیبی از Lighthouse و جریمه‌ها' : 'Hybrid: Lighthouse + penalties'))}
+        </div>
+      </div>
+    </div>
+    
+    <div style="background: #eff6ff; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+      <div style="font-size: 13px; color: #1e40af;">
+        <strong>${isRTL ? 'نکته:' : 'Note:'}</strong> 
+        ${isRTL 
+          ? 'هر محور بر اساس وزن خاص خود در امتیاز کلی تأثیر می‌گذارد. مشکلات بحرانی بیشترین تأثیر منفی را دارند.'
+          : 'Each pillar contributes to the overall score based on its specific weight. Critical issues have the highest negative impact.'}
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+function generateIssueThresholdsSection(lang: 'en' | 'fa'): string {
+  const isRTL = lang === 'fa';
+  
+  const thresholds = [
+    { id: 'E01', name: isRTL ? 'noindex' : 'noindex', threshold: isRTL ? 'وجود تگ noindex' : 'noindex tag present', severity: 'critical' },
+    { id: 'E02', name: isRTL ? 'خطای 4xx' : '4xx Error', threshold: isRTL ? 'کد وضعیت 400-499' : 'Status code 400-499', severity: 'critical' },
+    { id: 'E04', name: isRTL ? 'زنجیره ریدایرکت' : 'Redirect Chain', threshold: isRTL ? '>1 ریدایرکت' : '>1 redirect', severity: 'medium' },
+    { id: 'E06', name: isRTL ? 'عدم تطابق canonical' : 'Canonical Mismatch', threshold: isRTL ? 'URL نهایی ≠ canonical' : 'Final URL ≠ canonical', severity: 'high' },
+    { id: 'F01', name: isRTL ? 'عنوان خیلی کوتاه' : 'Title Too Short', threshold: isRTL ? '<10 کاراکتر' : '<10 chars', severity: 'high' },
+    { id: 'F04', name: isRTL ? 'توضیحات متا خیلی کوتاه' : 'Meta Description Short', threshold: isRTL ? '<50 کاراکتر' : '<50 chars', severity: 'high' },
+    { id: 'F07', name: isRTL ? 'فاقد H1' : 'Missing H1', threshold: isRTL ? '0 تگ H1' : '0 H1 tags', severity: 'medium' },
+    { id: 'F08', name: isRTL ? 'چندین H1' : 'Multiple H1s', threshold: isRTL ? '>1 تگ H1' : '>1 H1 tags', severity: 'medium' },
+    { id: 'G01', name: isRTL ? 'تصاویر بدون alt' : 'Images Missing Alt', threshold: isRTL ? '>0 تصویر بدون alt' : '>0 images without alt', severity: 'low' },
+    { id: 'M01', name: isRTL ? 'فاقد viewport' : 'Missing Viewport', threshold: isRTL ? 'فاقد متا viewport' : 'No viewport meta', severity: 'high' },
+    { id: 'C03', name: isRTL ? 'محتوای نازک' : 'Thin Content', threshold: isRTL ? '<300 کلمه' : '<300 words', severity: 'medium' },
+    { id: 'S01', name: isRTL ? 'عدم استفاده HTTPS' : 'Not Using HTTPS', threshold: isRTL ? 'URL با HTTP' : 'HTTP URL', severity: 'critical' },
+    { id: 'S02', name: isRTL ? 'محتوای ترکیبی' : 'Mixed Content', threshold: isRTL ? 'منابع HTTP روی HTTPS' : 'HTTP resources on HTTPS', severity: 'high' },
+    { id: 'P01', name: isRTL ? 'پاسخ کند سرور' : 'Slow Server Response', threshold: isRTL ? 'TTFB >800ms' : 'TTFB >800ms', severity: 'medium' },
+    { id: 'L01', name: isRTL ? 'امتیاز عملکرد ضعیف' : 'Poor Performance', threshold: isRTL ? 'امتیاز Lighthouse <50' : 'Lighthouse score <50', severity: 'critical' },
+    { id: 'L02', name: isRTL ? 'LCP کند' : 'Slow LCP', threshold: isRTL ? 'LCP >2.5s' : 'LCP >2.5s', severity: 'high' },
+    { id: 'L03', name: isRTL ? 'CLS ضعیف' : 'Poor CLS', threshold: isRTL ? 'CLS >0.1' : 'CLS >0.1', severity: 'high' },
+    { id: 'L04', name: isRTL ? 'TBT بالا' : 'High TBT', threshold: isRTL ? 'TBT >200ms' : 'TBT >200ms', severity: 'medium' },
+    { id: 'L05', name: isRTL ? 'صفحه یتیم' : 'Orphan Page', threshold: isRTL ? '0 لینک ورودی' : '0 inbound links', severity: 'high' },
+    { id: 'L06', name: isRTL ? 'صفحه عمیق' : 'Deep Page', threshold: isRTL ? '>3 سطح از صفحه اصلی' : '>3 levels from homepage', severity: 'medium' },
+  ];
+  
+  const rows = thresholds.map(t => `
+    <tr>
+      <td><span class="severity-badge severity-${t.severity}">${t.severity}</span></td>
+      <td><strong>${t.id}</strong></td>
+      <td>${t.name}</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">${t.threshold}</td>
+    </tr>
+  `).join('');
+  
+  return `
+  <div class="section">
+    <h2 class="section-title">${isRTL ? 'آستانه‌های تشخیص مشکلات' : 'Issue Detection Thresholds'}</h2>
+    <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">
+      ${isRTL 
+        ? 'صفحات زیر در صورت برآورده کردن این شرایط علامت‌گذاری می‌شوند:'
+        : 'Pages are flagged when they meet these conditions:'}
+    </p>
+    <table class="issues-table">
+      <thead>
+        <tr>
+          <th>${isRTL ? 'شدت' : 'Severity'}</th>
+          <th>${isRTL ? 'کد' : 'Code'}</th>
+          <th>${isRTL ? 'مشکل' : 'Issue'}</th>
+          <th>${isRTL ? 'آستانه' : 'Threshold'}</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
   </div>
   `;
 }

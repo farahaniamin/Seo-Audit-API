@@ -92,9 +92,13 @@ export function scoreSite(
 
   // Calculate freshness penalty if data available
   let freshnessPenalty = 0;
+  let freshnessRawScore = 0;
   if (freshnessData && freshnessData.total_items > 0) {
-    // Convert freshness score (0-100) to penalty
-    // Score of 100 = 0 penalty, Score of 0 = max penalty
+    // Use the actual freshness score from WordPress data (0-100)
+    // This is already calculated based on content age distribution
+    freshnessRawScore = freshnessData.score;
+    
+    // Calculate penalty for stale content issue (C01) based on ratio
     const staleRatio = freshnessData.stale_count / freshnessData.total_items;
     freshnessPenalty = penaltyFor(
       ISSUE_DEFS.find(d => d.id === 'C01')!,
@@ -153,7 +157,8 @@ export function scoreSite(
     crawlability: Math.max(0, 100 - pillarPenalty.crawlability),
     onpage: Math.max(0, 100 - pillarPenalty.onpage),
     technical: Math.max(0, 100 - pillarPenalty.technical),
-    freshness: freshnessData ? Math.max(0, 100 - pillarPenalty.freshness) : 0,
+    // Use raw freshness score from WordPress data (calculated based on content age distribution)
+    freshness: freshnessData ? freshnessRawScore : 0,
     performance: performanceScore,
   };
 
@@ -185,7 +190,11 @@ export function scoreSite(
     pillars.freshness * weights.freshness +
     pillars.performance * weights.performance;
 
-  const total_penalty = items.reduce((s, it) => s + it.penalty, 0) + freshnessPenalty;
+  // Calculate total penalty excluding C01 (freshness) since freshness pillar uses raw score
+  // not penalty-based calculation like other pillars
+  const total_penalty = items
+    .filter(it => it.id !== 'C01')
+    .reduce((s, it) => s + it.penalty, 0) + freshnessPenalty;
 
   // Calculate grade
   let grade = 'F';
@@ -193,6 +202,22 @@ export function scoreSite(
   else if (overall >= 80) grade = 'B';
   else if (overall >= 70) grade = 'C';
   else if (overall >= 60) grade = 'D';
+
+  // Calculate per-pillar penalty totals for transparency
+  const pillarPenaltyTotals: Record<Pillar, number> = {
+    indexability: 0,
+    crawlability: 0,
+    onpage: 0,
+    technical: 0,
+    freshness: freshnessPenalty,
+    performance: 0,
+  };
+  
+  for (const it of items) {
+    if (it.id !== 'C01') { // Exclude C01 from other pillars since it's freshness-specific
+      pillarPenaltyTotals[it.pillar] += it.penalty;
+    }
+  }
 
   return {
     overall_score: Math.round(overall * 10) / 10,
@@ -211,6 +236,32 @@ export function scoreSite(
       checked_pages: checked,
       total_penalty: Math.round(total_penalty * 100) / 100,
       freshness_penalty: Math.round(freshnessPenalty * 100) / 100,
+      pillar_penalties: {
+        indexability: Math.round(pillarPenaltyTotals.indexability * 100) / 100,
+        crawlability: Math.round(pillarPenaltyTotals.crawlability * 100) / 100,
+        onpage: Math.round(pillarPenaltyTotals.onpage * 100) / 100,
+        technical: Math.round(pillarPenaltyTotals.technical * 100) / 100,
+        freshness: Math.round(pillarPenaltyTotals.freshness * 100) / 100,
+        performance: Math.round(pillarPenaltyTotals.performance * 100) / 100,
+      },
+      // Include scoring methodology info
+      scoring_methodology: {
+        grade_thresholds: {
+          A: '90-100 (Excellent)',
+          B: '80-89 (Good)',
+          C: '70-79 (Fair)',
+          D: '60-69 (Needs Work)',
+          F: '0-59 (Poor)',
+        },
+        performance_formula: lighthouseScore && lighthouseScore > 0
+          ? `Hybrid: 40% Lighthouse (${lighthouseScore}) + 60% Issue Penalties (${Math.round((100 - pillarPenaltyTotals.performance) * 10) / 10}) = ${Math.round(performanceScore * 10) / 10}`
+          : 'Penalty-based: 100 - total penalties',
+        freshness_formula: freshnessData
+          ? `Raw freshness score: ${freshnessRawScore}/100 (based on content age distribution)`
+          : 'Not available (no WordPress data)',
+        other_pillars_formula: '100 - total penalties for each pillar',
+        overall_formula: 'Weighted average of all 6 pillar scores',
+      },
       items,
     },
   };
