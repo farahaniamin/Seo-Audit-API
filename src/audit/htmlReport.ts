@@ -139,13 +139,13 @@ export function generateHtmlReport(report: Report, lang: Lang = 'en'): string {
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">${lang === 'fa' ? 'امتیازات محوری' : 'Pillar Scores'}</h3>
         <div class="relative h-64">
-          <canvas id="pillarsChart" class="w-full h-full"></canvas>
+          <canvas id="pillarsChart" width="400" height="256" class="w-full h-full"></canvas>
         </div>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">${lang === 'fa' ? 'توزیع مشکلات' : 'Issues Distribution'}</h3>
         <div class="relative h-64">
-          <canvas id="issuesChart" class="w-full h-full"></canvas>
+          <canvas id="issuesChart" width="400" height="256" class="w-full h-full"></canvas>
         </div>
       </div>
     </section>
@@ -155,7 +155,7 @@ export function generateHtmlReport(report: Report, lang: Lang = 'en'): string {
     <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">${lang === 'fa' ? 'معیارهای عملکرد Lighthouse' : 'Lighthouse Performance Metrics'}</h3>
         <div class="relative h-72 max-w-md mx-auto">
-          <canvas id="lighthouseChart" class="w-full h-full"></canvas>
+          <canvas id="lighthouseChart" width="400" height="288" class="w-full h-full"></canvas>
         </div>
     </section>
     ` : ''}
@@ -530,8 +530,26 @@ export function generateHtmlReport(report: Report, lang: Lang = 'en'): string {
       initCharts();
     }
 
-    // Initialize charts
-    document.addEventListener('DOMContentLoaded', initCharts);
+    // Initialize charts when DOM and Chart.js are ready
+    function waitForChartJS(callback, maxAttempts = 50) {
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (typeof Chart !== 'undefined') {
+          clearInterval(interval);
+          callback();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          console.error('Chart.js failed to load');
+        }
+      }, 100);
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => waitForChartJS(initCharts));
+    } else {
+      waitForChartJS(initCharts);
+    }
   </script>
 </body>
 </html>`;
