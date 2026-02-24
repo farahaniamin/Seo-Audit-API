@@ -179,8 +179,9 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     };
   }
 
-  // Score site with freshness data included
-  const scores = scoreSite(crawl.pages as any, totals, lang, siteType, freshnessScoreData);
+  // Score site with freshness and Lighthouse data included
+  const lighthouseAvgScore = lighthouseData?.performance ?? 0;
+  const scores = scoreSite(crawl.pages as any, totals, lang, siteType, freshnessScoreData, lighthouseAvgScore > 0 ? lighthouseAvgScore : undefined);
   const { findings, top_issues: topIssues, quick_wins: quickWins } = buildFindings(lang, crawl.pages as any, scores);
 
   // Merge freshness findings with regular findings

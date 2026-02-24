@@ -81,7 +81,8 @@ export function scoreSite(
   totals: Map<string, number>, 
   lang: Lang, 
   siteType: SiteType = 'unknown',
-  freshnessData?: { score: number; stale_count: number; total_items: number }
+  freshnessData?: { score: number; stale_count: number; total_items: number },
+  lighthouseScore?: number
 ) {
   const checked = Math.max(1, pages.length);
 
@@ -132,13 +133,24 @@ export function scoreSite(
   }
 
   // Calculate pillar scores (0-100)
+  // Performance uses hybrid scoring: 40% raw Lighthouse + 60% issue penalties
+  let performanceScore: number;
+  if (lighthouseScore !== undefined && lighthouseScore > 0) {
+    // Hybrid formula: 40% raw Lighthouse + 60% penalty-adjusted score
+    const penaltyAdjustedScore = Math.max(0, 100 - pillarPenalty.performance);
+    performanceScore = (lighthouseScore * 0.4) + (penaltyAdjustedScore * 0.6);
+  } else {
+    // Fallback to penalty-only if no Lighthouse data
+    performanceScore = Math.max(0, 100 - pillarPenalty.performance);
+  }
+
   const pillars: Record<Pillar, number> = {
     indexability: Math.max(0, 100 - pillarPenalty.indexability),
     crawlability: Math.max(0, 100 - pillarPenalty.crawlability),
     onpage: Math.max(0, 100 - pillarPenalty.onpage),
     technical: Math.max(0, 100 - pillarPenalty.technical),
     freshness: freshnessData ? Math.max(0, 100 - pillarPenalty.freshness) : 0,
-    performance: Math.max(0, 100 - pillarPenalty.performance),
+    performance: performanceScore,
   };
 
   // Dynamic weights based on site type and data availability
