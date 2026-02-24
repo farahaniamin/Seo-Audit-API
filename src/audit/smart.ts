@@ -245,15 +245,18 @@ export async function smartSample(startUrl: string, limits: Limits, candidates: 
   for (const page of pages) {
     const depth = linkDepths.get(page.url) ?? 999;
     const inbound = inboundCounts.get(page.url) ?? 0;
+    const isHomepage = page.url === seed;
+    const isReachable = depth !== 999;
     
-    // L01: Orphan page (0 inbound links)
-    if (inbound === 0 && page.url !== seed) {
+    // L05: Orphan page (0 inbound links, not homepage)
+    if (inbound === 0 && !isHomepage) {
       page.issues = page.issues || [];
       page.issues.push('L05');
     }
     
-    // L02: Deep page (>3 levels from homepage)
-    if (depth > 3) {
+    // L06: Deep page (>3 levels from homepage, must be reachable)
+    // Only flag pages that are actually linked from homepage through >3 hops
+    if (isReachable && !isHomepage && depth > 3) {
       page.issues = page.issues || [];
       page.issues.push('L06');
     }
@@ -290,27 +293,32 @@ function buildLinkGraph(pages: Page[], origin: string): Map<string, Set<string>>
 
 /**
  * Calculate link depth (distance from homepage) using BFS
+ * Traverses forward from homepage following outbound links
  */
 function calculateLinkDepths(pages: Page[], graph: Map<string, Set<string>>, homepage: string): Map<string, number> {
   const depths = new Map<string, number>();
   const visited = new Set<string>();
-  const queue: Array<[string, number]> = [[homepage, 0]];
   
   // Normalize homepage URL
   const normalizedHomepage = normalizeUrl(homepage) || homepage;
+  const queue: Array<[string, number]> = [[normalizedHomepage, 0]];
+  
   depths.set(normalizedHomepage, 0);
   visited.add(normalizedHomepage);
   
   while (queue.length > 0) {
     const [currentUrl, depth] = queue.shift()!;
     
-    // Find all pages that link to current URL
-    for (const [sourceUrl, targets] of graph.entries()) {
-      if (targets.has(currentUrl) && !visited.has(sourceUrl)) {
-        const newDepth = depth + 1;
-        depths.set(sourceUrl, newDepth);
-        visited.add(sourceUrl);
-        queue.push([sourceUrl, newDepth]);
+    // Get all outbound links from current URL and follow them
+    const outboundLinks = graph.get(currentUrl);
+    if (outboundLinks) {
+      for (const targetUrl of outboundLinks) {
+        if (!visited.has(targetUrl)) {
+          const newDepth = depth + 1;
+          depths.set(targetUrl, newDepth);
+          visited.add(targetUrl);
+          queue.push([targetUrl, newDepth]);
+        }
       }
     }
   }
