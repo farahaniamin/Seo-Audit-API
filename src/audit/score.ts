@@ -48,6 +48,10 @@ const ISSUE_DEFS: IssueDef[] = [
   { id: 'L02', pillar: 'performance', weight: 18, severity: 'high', max_ratio: 1.0 }, // Poor LCP (>2.5s)
   { id: 'L03', pillar: 'performance', weight: 16, severity: 'high', max_ratio: 1.0 }, // Poor CLS (>0.1)
   { id: 'L04', pillar: 'performance', weight: 14, severity: 'medium', max_ratio: 1.0 }, // Poor TBT (>200ms)
+  
+  // Phase 3: Internal link analysis issues
+  { id: 'L05', pillar: 'technical', weight: 12, severity: 'high', quick_win: true, max_ratio: 1.0 }, // Orphan page (0 inbound links)
+  { id: 'L06', pillar: 'crawlability', weight: 6, severity: 'medium', max_ratio: 1.0 }, // Deep page (>3 levels from homepage)
 ];
 
 const SEVERITY_MULT: Record<Severity, number> = {

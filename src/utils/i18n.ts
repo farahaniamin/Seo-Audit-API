@@ -66,7 +66,11 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.L01.desc': 'Lighthouse performance score below 50 indicates significant performance issues. Core Web Vitals are a ranking factor.',
     'issue.L02.desc': 'Largest Contentful Paint (LCP) measures loading performance. Over 2.5s provides poor user experience and affects rankings.',
     'issue.L03.desc': 'Cumulative Layout Shift (CLS) measures visual stability. Over 0.1 causes layout shifts that frustrate users.',
-    'issue.L04.desc': 'Total Blocking Time (TBT) measures interactivity. Over 200ms causes input delays and poor user experience.'
+    'issue.L04.desc': 'Total Blocking Time (TBT) measures interactivity. Over 200ms causes input delays and poor user experience.',
+    'issue.L05.title': 'Orphan page (no inbound links)',
+    'issue.L06.title': 'Deep page (>3 levels from homepage)',
+    'issue.L05.desc': 'Pages with no internal links pointing to them are invisible to search engine crawlers. Add links from relevant pages to help discovery.',
+    'issue.L06.desc': 'Pages more than 3 clicks from homepage are hard for users and crawlers to find. Improve site architecture and internal linking.'
   },
   fa: {
     audit_complete: 'نتایج بررسی سئو',
@@ -133,7 +137,11 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.L01.desc': 'امتیاز عملکرد Lighthouse زیر 50 نشان‌دهنده مشکلات عملکردی قابل توجه است. Core Web Vitals فاکتور رتبه‌بندی هستند.',
     'issue.L02.desc': 'Largest Contentful Paint (LCP) سرعت بارگذاری را اندازه‌گیری می‌کند. بیش از 2.5 ثانیه تجربه کاربری ضعیفی ایجاد می‌کند.',
     'issue.L03.desc': 'Cumulative Layout Shift (CLS) پایداری بصری را اندازه‌گیری می‌کند. بیش از 0.1 باعث تغییر چیدمان آزاردهنده می‌شود.',
-    'issue.L04.desc': 'Total Blocking Time (TBT) تعامل‌پذیری را اندازه‌گیری می‌کند. بیش از 200ms باعث تأخیر در ورودی می‌شود.'
+    'issue.L04.desc': 'Total Blocking Time (TBT) تعامل‌پذیری را اندازه‌گیری می‌کند. بیش از 200ms باعث تأخیر در ورودی می‌شود.',
+    'issue.L05.title': 'صفحه یتیم (بدون لینک ورودی)',
+    'issue.L06.title': 'صفحه عمیق (>3 سطح از صفحه اصلی)',
+    'issue.L05.desc': 'صفحاتی که هیچ لینک داخلی به آن‌ها اشاره نمی‌کند برای خزنده‌های موتور جستجو نامرئی هستند. لینک‌هایی از صفحات مرتبط اضافه کنید تا کشف شوند.',
+    'issue.L06.desc': 'صفحاتی که بیش از 3 کلیک از صفحه اصلی فاصله دارند برای کاربران و خزنده‌ها سخت برای پیدا کردن هستند. معماری سایت و لینک‌دهی داخلی را بهبود دهید.'
   }
 };
 
@@ -158,7 +166,9 @@ const CHECK: Record<Lang, Record<string,string>> = {
     L01: 'Poor performance score',
     L02: 'Slow LCP',
     L03: 'Poor CLS',
-    L04: 'High TBT'
+    L04: 'High TBT',
+    L05: 'Orphan page',
+    L06: 'Deep page'
   },
   fa: {
     E01: 'صفحات دارای noindex',
@@ -180,7 +190,9 @@ const CHECK: Record<Lang, Record<string,string>> = {
     L01: 'امتیاز عملکرد ضعیف',
     L02: 'LCP کند',
     L03: 'CLS ضعیف',
-    L04: 'TBT بالا'
+    L04: 'TBT بالا',
+    L05: 'صفحه یتیم',
+    L06: 'صفحه عمیق'
   }
 };
 

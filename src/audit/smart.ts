@@ -236,5 +236,115 @@ export async function smartSample(startUrl: string, limits: Limits, candidates: 
   const discovered = new Set<string>([...selected]);
   for (const p of pages) for (const l of p.links_internal) discovered.add(l);
 
+  // Phase 3: Build link graph and calculate metrics
+  const linkGraph = buildLinkGraph(pages, origin);
+  const linkDepths = calculateLinkDepths(pages, linkGraph, seed);
+  const inboundCounts = calculateInboundLinks(pages, linkGraph);
+
+  // Add Phase 3 issues
+  for (const page of pages) {
+    const depth = linkDepths.get(page.url) ?? 999;
+    const inbound = inboundCounts.get(page.url) ?? 0;
+    
+    // L01: Orphan page (0 inbound links)
+    if (inbound === 0 && page.url !== seed) {
+      page.issues = page.issues || [];
+      page.issues.push('L05');
+    }
+    
+    // L02: Deep page (>3 levels from homepage)
+    if (depth > 3) {
+      page.issues = page.issues || [];
+      page.issues.push('L06');
+    }
+  }
+
   return { pages, checked: pages.length, discovered: discovered.size, origin };
+}
+
+/**
+ * Build link graph from crawled pages
+ * Returns Map<url, Set<linked_urls>>
+ */
+function buildLinkGraph(pages: Page[], origin: string): Map<string, Set<string>> {
+  const graph = new Map<string, Set<string>>();
+  
+  for (const page of pages) {
+    const normalizedUrl = normalizeUrl(page.url) || page.url;
+    if (!graph.has(normalizedUrl)) {
+      graph.set(normalizedUrl, new Set());
+    }
+    
+    for (const link of page.links_internal) {
+      try {
+        const normalizedLink = normalizeUrl(link) || link;
+        graph.get(normalizedUrl)!.add(normalizedLink);
+      } catch {
+        // Skip invalid URLs
+      }
+    }
+  }
+  
+  return graph;
+}
+
+/**
+ * Calculate link depth (distance from homepage) using BFS
+ */
+function calculateLinkDepths(pages: Page[], graph: Map<string, Set<string>>, homepage: string): Map<string, number> {
+  const depths = new Map<string, number>();
+  const visited = new Set<string>();
+  const queue: Array<[string, number]> = [[homepage, 0]];
+  
+  // Normalize homepage URL
+  const normalizedHomepage = normalizeUrl(homepage) || homepage;
+  depths.set(normalizedHomepage, 0);
+  visited.add(normalizedHomepage);
+  
+  while (queue.length > 0) {
+    const [currentUrl, depth] = queue.shift()!;
+    
+    // Find all pages that link to current URL
+    for (const [sourceUrl, targets] of graph.entries()) {
+      if (targets.has(currentUrl) && !visited.has(sourceUrl)) {
+        const newDepth = depth + 1;
+        depths.set(sourceUrl, newDepth);
+        visited.add(sourceUrl);
+        queue.push([sourceUrl, newDepth]);
+      }
+    }
+  }
+  
+  // Set depth for pages not reachable from homepage
+  for (const page of pages) {
+    const normalizedUrl = normalizeUrl(page.url) || page.url;
+    if (!depths.has(normalizedUrl)) {
+      depths.set(normalizedUrl, 999); // Unreachable/orphan
+    }
+  }
+  
+  return depths;
+}
+
+/**
+ * Calculate inbound link count for each page
+ */
+function calculateInboundLinks(pages: Page[], graph: Map<string, Set<string>>): Map<string, number> {
+  const inboundCounts = new Map<string, number>();
+  
+  // Initialize all pages with 0
+  for (const page of pages) {
+    const normalizedUrl = normalizeUrl(page.url) || page.url;
+    inboundCounts.set(normalizedUrl, 0);
+  }
+  
+  // Count inbound links
+  for (const [sourceUrl, targets] of graph.entries()) {
+    for (const targetUrl of targets) {
+      const currentCount = inboundCounts.get(targetUrl) || 0;
+      inboundCounts.set(targetUrl, currentCount + 1);
+    }
+  }
+  
+  return inboundCounts;
 }
