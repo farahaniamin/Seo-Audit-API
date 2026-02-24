@@ -416,8 +416,10 @@ export function generateHtmlReport(report: Report, lang: Lang = 'en'): string {
       const gridColor = isDark ? '#374151' : '#e5e7eb';
 
       // Pillars Bar Chart
-      const pillarsCtx = document.getElementById('pillarsChart');
-      if (pillarsCtx) {
+      const pillarsCanvas = document.getElementById('pillarsChart');
+      if (pillarsCanvas) {
+        const pillarsCtx = pillarsCanvas.getContext('2d');
+        if (pillarsCtx) {
         charts.push(new Chart(pillarsCtx, {
           type: 'bar',
           data: {
@@ -456,11 +458,14 @@ export function generateHtmlReport(report: Report, lang: Lang = 'en'): string {
             }
           }
         }));
+        }
       }
 
       // Issues Doughnut Chart
-      const issuesCtx = document.getElementById('issuesChart');
-      if (issuesCtx) {
+      const issuesCanvas = document.getElementById('issuesChart');
+      if (issuesCanvas) {
+        const issuesCtx = issuesCanvas.getContext('2d');
+        if (issuesCtx) {
         charts.push(new Chart(issuesCtx, {
           type: 'doughnut',
           data: {
@@ -486,11 +491,14 @@ export function generateHtmlReport(report: Report, lang: Lang = 'en'): string {
             }
           }
         }));
+        }
       }
 
       // Lighthouse Radar Chart
-      const lighthouseCtx = document.getElementById('lighthouseChart');
-      if (lighthouseCtx) {
+      const lighthouseCanvas = document.getElementById('lighthouseChart');
+      if (lighthouseCanvas) {
+        const lighthouseCtx = lighthouseCanvas.getContext('2d');
+        if (lighthouseCtx) {
         charts.push(new Chart(lighthouseCtx, {
           type: 'radar',
           data: {
@@ -521,6 +529,7 @@ export function generateHtmlReport(report: Report, lang: Lang = 'en'): string {
             }
           }
         }));
+        }
       }
     }
 
