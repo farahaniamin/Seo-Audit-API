@@ -259,7 +259,8 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
       overall: scores.overall_score,
       pillars: scores.pillars,
       site_type: scores.site_type,
-      weights: scores.weights
+      weights: scores.weights,
+      breakdown: scores.breakdown
     },
     findings: allFindings,
     top_issues: topIssues,

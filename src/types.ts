@@ -161,6 +161,20 @@ export type Report = {
     site_type?: 'ecommerce' | 'corporate' | 'content' | 'unknown';
     /** pillar weights used for overall score */
     weights?: Record<string, number>;
+    /** detailed scoring breakdown and methodology */
+    breakdown?: {
+      checked_pages: number;
+      total_penalty: number;
+      freshness_penalty?: number;
+      pillar_penalties?: Record<string, number>;
+      scoring_methodology?: {
+        grade_thresholds: Record<string, string>;
+        performance_formula: string;
+        freshness_formula: string;
+        other_pillars_formula: string;
+        overall_formula: string;
+      };
+    };
   };
 
   findings: Finding[];
