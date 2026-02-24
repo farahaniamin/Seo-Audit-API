@@ -138,14 +138,14 @@ export function generateHtmlReport(report: Report, lang: Lang = 'en'): string {
     <section class="grid md:grid-cols-2 gap-6">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">${lang === 'fa' ? 'امتیازات محوری' : 'Pillar Scores'}</h3>
-        <div class="h-64">
-          <canvas id="pillarsChart"></canvas>
+        <div class="relative h-64">
+          <canvas id="pillarsChart" class="w-full h-full"></canvas>
         </div>
       </div>
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">${lang === 'fa' ? 'توزیع مشکلات' : 'Issues Distribution'}</h3>
-        <div class="h-64">
-          <canvas id="issuesChart"></canvas>
+        <div class="relative h-64">
+          <canvas id="issuesChart" class="w-full h-full"></canvas>
         </div>
       </div>
     </section>
@@ -154,9 +154,9 @@ export function generateHtmlReport(report: Report, lang: Lang = 'en'): string {
     <!-- Lighthouse Radar Chart -->
     <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">${lang === 'fa' ? 'معیارهای عملکرد Lighthouse' : 'Lighthouse Performance Metrics'}</h3>
-      <div class="h-72 max-w-md mx-auto">
-        <canvas id="lighthouseChart"></canvas>
-      </div>
+        <div class="relative h-72 max-w-md mx-auto">
+          <canvas id="lighthouseChart" class="w-full h-full"></canvas>
+        </div>
     </section>
     ` : ''}
 
@@ -579,7 +579,8 @@ function generateIssueRow(finding: Finding, lang: Lang): string {
   };
   
   const title = t(lang, `issue.${finding.id}.title`) || finding.id;
-  const prevalence = (finding.prevalence * 100).toFixed(1);
+  const prevalenceValue = finding.prevalence || (finding.affected_pages / finding.checked_pages) || 0;
+  const prevalence = (prevalenceValue * 100).toFixed(1);
   
   return `
   <tr data-severity="${finding.severity}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
