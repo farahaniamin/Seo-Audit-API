@@ -43,6 +43,10 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.S01.title': 'Not using HTTPS',
     'issue.S02.title': 'Mixed content (HTTP on HTTPS)',
     'issue.P01.title': 'Slow server response (>800ms)',
+    'issue.L01.title': 'Poor performance score (<50)',
+    'issue.L02.title': 'Slow Largest Contentful Paint (>2.5s)',
+    'issue.L03.title': 'Poor Cumulative Layout Shift (>0.1)',
+    'issue.L04.title': 'High Total Blocking Time (>200ms)',
 
     // Issue descriptions
     'issue.E01.desc': 'Pages marked as noindex (meta robots or X-Robots-Tag) may not appear in Google results. Ensure only pages you truly want hidden are noindex.',
@@ -58,7 +62,11 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.C03.desc': 'Pages with less than 300 words of content may be considered thin content. Add more valuable, unique content.',
     'issue.S01.desc': 'Not using HTTPS is a security risk and ranking factor. Migrate to HTTPS with a valid SSL certificate.',
     'issue.S02.desc': 'Loading HTTP resources on HTTPS pages triggers browser security warnings. Update all links to use HTTPS.',
-    'issue.P01.desc': 'Time to First Byte (TTFB) over 800ms indicates slow server response. Optimize server configuration or upgrade hosting.'
+    'issue.P01.desc': 'Time to First Byte (TTFB) over 800ms indicates slow server response. Optimize server configuration or upgrade hosting.',
+    'issue.L01.desc': 'Lighthouse performance score below 50 indicates significant performance issues. Core Web Vitals are a ranking factor.',
+    'issue.L02.desc': 'Largest Contentful Paint (LCP) measures loading performance. Over 2.5s provides poor user experience and affects rankings.',
+    'issue.L03.desc': 'Cumulative Layout Shift (CLS) measures visual stability. Over 0.1 causes layout shifts that frustrate users.',
+    'issue.L04.desc': 'Total Blocking Time (TBT) measures interactivity. Over 200ms causes input delays and poor user experience.'
   },
   fa: {
     audit_complete: 'نتایج بررسی سئو',
@@ -102,6 +110,10 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.S01.title': 'HTTPS فعال نیست',
     'issue.S02.title': 'محتوای ترکیبی (HTTP روی HTTPS)',
     'issue.P01.title': 'پاسخ سرور کند (>800ms)',
+    'issue.L01.title': 'امتیاز عملکرد ضعیف (<50)',
+    'issue.L02.title': 'LCP کند (>2.5 ثانیه)',
+    'issue.L03.title': 'CLS ضعیف (>0.1)',
+    'issue.L04.title': 'TBT بالا (>200ms)',
 
     // Issue descriptions
     'issue.E01.desc': 'اگر صفحه noindex باشد (meta robots یا X-Robots-Tag)، احتمالاً در نتایج گوگل نمایش داده نمی‌شود. فقط صفحاتی که واقعاً نمی‌خواهید ایندکس شوند را noindex کنید.',
@@ -117,7 +129,11 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.C03.desc': 'صفحات با کمتر از 300 کلمه محتوا ممکن است به عنوان محتوای نازک در نظر گرفته شوند. محتوای ارزشمندتر اضافه کنید.',
     'issue.S01.desc': 'عدم استفاده از HTTPS خطر امنیتی است و فاکتور رتبه‌بندی. با گواهی SSL معتبر به HTTPS مهاجرت کنید.',
     'issue.S02.desc': 'بارگذاری منابع HTTP روی صفحات HTTPS هشدار امنیتی مرورگر را فعال می‌کند. همه لینک‌ها را به HTTPS به‌روزرسانی کنید.',
-    'issue.P01.desc': 'Time to First Byte (TTFB) بیشتر از 800ms نشان‌دهنده پاسخ کند سرور است. تنظیمات سرور را بهینه کنید یا هاست را ارتقا دهید.'
+    'issue.P01.desc': 'Time to First Byte (TTFB) بیشتر از 800ms نشان‌دهنده پاسخ کند سرور است. تنظیمات سرور را بهینه کنید یا هاست را ارتقا دهید.',
+    'issue.L01.desc': 'امتیاز عملکرد Lighthouse زیر 50 نشان‌دهنده مشکلات عملکردی قابل توجه است. Core Web Vitals فاکتور رتبه‌بندی هستند.',
+    'issue.L02.desc': 'Largest Contentful Paint (LCP) سرعت بارگذاری را اندازه‌گیری می‌کند. بیش از 2.5 ثانیه تجربه کاربری ضعیفی ایجاد می‌کند.',
+    'issue.L03.desc': 'Cumulative Layout Shift (CLS) پایداری بصری را اندازه‌گیری می‌کند. بیش از 0.1 باعث تغییر چیدمان آزاردهنده می‌شود.',
+    'issue.L04.desc': 'Total Blocking Time (TBT) تعامل‌پذیری را اندازه‌گیری می‌کند. بیش از 200ms باعث تأخیر در ورودی می‌شود.'
   }
 };
 
@@ -138,7 +154,11 @@ const CHECK: Record<Lang, Record<string,string>> = {
     C03: 'Thin content (<300 words)',
     S01: 'Not using HTTPS',
     S02: 'Mixed content',
-    P01: 'Slow server response'
+    P01: 'Slow server response',
+    L01: 'Poor performance score',
+    L02: 'Slow LCP',
+    L03: 'Poor CLS',
+    L04: 'High TBT'
   },
   fa: {
     E01: 'صفحات دارای noindex',
@@ -156,7 +176,11 @@ const CHECK: Record<Lang, Record<string,string>> = {
     C03: 'محتوای نازک (<300 کلمه)',
     S01: 'HTTPS فعال نیست',
     S02: 'محتوای ترکیبی',
-    P01: 'پاسخ سرور کند'
+    P01: 'پاسخ سرور کند',
+    L01: 'امتیاز عملکرد ضعیف',
+    L02: 'LCP کند',
+    L03: 'CLS ضعیف',
+    L04: 'TBT بالا'
   }
 };
 

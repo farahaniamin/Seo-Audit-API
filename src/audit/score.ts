@@ -2,7 +2,7 @@ import type { Lang } from '../types.js';
 import { t } from '../utils/i18n.js';
 import type { Page } from './smart.js';
 
-type Pillar = 'indexability' | 'crawlability' | 'onpage' | 'technical' | 'freshness';
+type Pillar = 'indexability' | 'crawlability' | 'onpage' | 'technical' | 'freshness' | 'performance';
 type Severity = 'critical' | 'high' | 'medium' | 'low';
 
 type IssueDef = {
@@ -42,6 +42,12 @@ const ISSUE_DEFS: IssueDef[] = [
   { id: 'S01', pillar: 'technical', weight: 15, severity: 'critical', quick_win: true, max_ratio: 1.0 }, // Not using HTTPS - security & ranking factor
   { id: 'S02', pillar: 'technical', weight: 10, severity: 'high', quick_win: true, max_ratio: 0.8 }, // Mixed content - security warning
   { id: 'P01', pillar: 'technical', weight: 6, severity: 'medium', max_ratio: 0.7 }, // Slow TTFB (>800ms) - performance issue
+  
+  // Phase 2: Lighthouse-based issues
+  { id: 'L01', pillar: 'performance', weight: 20, severity: 'critical', max_ratio: 1.0 }, // Poor performance score (<50)
+  { id: 'L02', pillar: 'performance', weight: 18, severity: 'high', max_ratio: 1.0 }, // Poor LCP (>2.5s)
+  { id: 'L03', pillar: 'performance', weight: 16, severity: 'high', max_ratio: 1.0 }, // Poor CLS (>0.1)
+  { id: 'L04', pillar: 'performance', weight: 14, severity: 'medium', max_ratio: 1.0 }, // Poor TBT (>200ms)
 ];
 
 const SEVERITY_MULT: Record<Severity, number> = {
@@ -116,6 +122,7 @@ export function scoreSite(
     onpage: 0,
     technical: 0,
     freshness: freshnessPenalty,
+    performance: 0,
   };
   
   for (const it of items) {
@@ -131,15 +138,16 @@ export function scoreSite(
     onpage: Math.max(0, 100 - pillarPenalty.onpage),
     technical: Math.max(0, 100 - pillarPenalty.technical),
     freshness: freshnessData ? Math.max(0, 100 - pillarPenalty.freshness) : 0,
+    performance: Math.max(0, 100 - pillarPenalty.performance),
   };
 
   // Dynamic weights based on site type and data availability
   const baseWeights =
     siteType === 'ecommerce'
-      ? { indexability: 0.24, crawlability: 0.18, onpage: 0.26, technical: 0.18, freshness: 0.14 }
+      ? { indexability: 0.20, crawlability: 0.15, onpage: 0.22, technical: 0.15, freshness: 0.12, performance: 0.16 }
       : siteType === 'corporate'
-        ? { indexability: 0.22, crawlability: 0.17, onpage: 0.28, technical: 0.17, freshness: 0.16 }
-        : { indexability: 0.23, crawlability: 0.17, onpage: 0.27, technical: 0.17, freshness: 0.16 };
+        ? { indexability: 0.18, crawlability: 0.15, onpage: 0.24, technical: 0.15, freshness: 0.14, performance: 0.14 }
+        : { indexability: 0.19, crawlability: 0.15, onpage: 0.23, technical: 0.15, freshness: 0.14, performance: 0.14 };
 
   // Adjust weights if freshness data not available
   const weights = { ...baseWeights };
@@ -147,7 +155,7 @@ export function scoreSite(
     // Redistribute freshness weight to other pillars
     const freshnessWeight = weights.freshness;
     weights.freshness = 0;
-    const otherPillars = ['indexability', 'crawlability', 'onpage', 'technical'] as const;
+    const otherPillars = ['indexability', 'crawlability', 'onpage', 'technical', 'performance'] as const;
     const redistributed = freshnessWeight / otherPillars.length;
     otherPillars.forEach(p => weights[p] += redistributed);
   }
@@ -158,7 +166,8 @@ export function scoreSite(
     pillars.crawlability * weights.crawlability +
     pillars.onpage * weights.onpage +
     pillars.technical * weights.technical +
-    pillars.freshness * weights.freshness;
+    pillars.freshness * weights.freshness +
+    pillars.performance * weights.performance;
 
   const total_penalty = items.reduce((s, it) => s + it.penalty, 0) + freshnessPenalty;
 
@@ -180,6 +189,7 @@ export function scoreSite(
       onpage: Math.round(pillars.onpage * 10) / 10,
       technical: Math.round(pillars.technical * 10) / 10,
       freshness: Math.round(pillars.freshness * 10) / 10,
+      performance: Math.round(pillars.performance * 10) / 10,
     },
     breakdown: {
       checked_pages: checked,

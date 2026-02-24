@@ -1,4 +1,4 @@
-import type { AuditCreateRequest, Limits, Profile, Report, WpApiData, FreshnessData, Finding } from '../types.js';
+import type { AuditCreateRequest, Limits, Profile, Report, WpApiData, FreshnessData, Finding, LighthouseData } from '../types.js';
 import { fetchRobots } from './robots.js';
 import { discoverSitemaps, sampleSitemapUrls } from './sitemap.js';
 import { smartSample } from './smart.js';
@@ -10,6 +10,7 @@ import { inferLang } from '../utils/i18n.js';
 import { normalizeUrl as normalizeUrlStrict, isCrawlableUrl, sameHost } from './url.js';
 import { fetchWpData, getPriorityUrls } from './wpApi.js';
 import { calculateFreshnessScore, formatFreshnessData, getFreshnessRecommendations } from './freshness.js';
+import { runLighthouseOnPages, aggregateLighthouseResults } from './lighthouse.js';
 
 function nowIso() { return new Date().toISOString(); }
 
@@ -129,6 +130,36 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     }
   }
 
+  // Run Lighthouse on 3 strategic pages for performance metrics
+  onProgress?.('lighthouse', 0);
+  let lighthouseResults: import('./lighthouse.js').LighthouseResult[] = [];
+  let lighthouseData: LighthouseData | undefined;
+  
+  try {
+    lighthouseResults = await runLighthouseOnPages(crawl.pages, origin, (stage, value) => {
+      if (stage === 'lighthouse') onProgress?.('lighthouse', value);
+    });
+    
+    const aggregated = aggregateLighthouseResults(lighthouseResults);
+    lighthouseData = {
+      ...aggregated,
+      pages: lighthouseResults.map(r => ({
+        url: r.url,
+        metrics: r.metrics,
+        error: r.error
+      }))
+    };
+    
+    // Add Lighthouse issues to totals for scoring
+    for (const issueId of aggregated.issues) {
+      totals.set(issueId, (totals.get(issueId) ?? 0) + 1);
+    }
+  } catch (error) {
+    console.error('Lighthouse audit failed:', error);
+    lighthouseData = undefined;
+  }
+  onProgress?.('lighthouse', 100);
+
   // Calculate content freshness from WP API data
   let freshnessData: FreshnessData | undefined;
   let freshnessFindings: Finding[] = [];
@@ -179,7 +210,8 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     quickWins,
     pillars: scores.pillars,
     wpData: wpData.available ? wpData : undefined,
-    freshnessData
+    freshnessData,
+    lighthouseData
   });
   const text_en = buildTelegram('en', { 
     url, 
@@ -189,7 +221,8 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     quickWins,
     pillars: scores.pillars,
     wpData: wpData.available ? wpData : undefined,
-    freshnessData
+    freshnessData,
+    lighthouseData
   });
 
   const pages_with_issues = crawl.pages
@@ -235,12 +268,14 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     telegram: { text: lang === 'fa' ? text_fa : text_en, text_en, text_fa },
     wp_api: wpData.available ? wpData : undefined,
     freshness: freshnessData,
+    lighthouse: lighthouseData,
     debug: {
       robots_ok: robots.ok,
       robots_status: robots.status,
       sitemaps,
       wp_api_available: wpData.available,
-      priority_urls_count: priorityUrls.length
+      priority_urls_count: priorityUrls.length,
+      lighthouse_pages: lighthouseResults.length
     }
   };
 

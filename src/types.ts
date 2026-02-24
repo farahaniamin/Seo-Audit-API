@@ -97,6 +97,32 @@ export type FreshnessData = {
   latest_posts: LatestContentItem[];
 };
 
+// Lighthouse Performance Data
+export type LighthouseMetrics = {
+  performance: number;
+  lcp: number | null; // Largest Contentful Paint in ms
+  cls: number | null; // Cumulative Layout Shift
+  tbt: number | null; // Total Blocking Time in ms
+  fcp: number | null; // First Contentful Paint in ms
+  speedIndex: number | null;
+};
+
+export type LighthousePageResult = {
+  url: string;
+  metrics: LighthouseMetrics;
+  error?: string;
+};
+
+export type LighthouseData = {
+  performance: number; // 0-100
+  lcp: number | null;
+  cls: number | null;
+  tbt: number | null;
+  issues: string[];
+  opportunities: string[];
+  pages: LighthousePageResult[];
+};
+
 
 export type PageReport = {
   url: string;
@@ -161,6 +187,9 @@ export type Report = {
   
   // Content freshness analysis
   freshness?: FreshnessData;
+
+  // Lighthouse performance data
+  lighthouse?: LighthouseData;
 
   debug?: any;
 };

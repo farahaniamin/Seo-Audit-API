@@ -1,4 +1,4 @@
-import type { Coverage, Finding, Lang, WpApiData, FreshnessData } from '../types.js';
+import type { Coverage, Finding, Lang, WpApiData, FreshnessData, LighthouseData } from '../types.js';
 import { t, checkTitle } from '../utils/i18n.js';
 
 function grade(lang: Lang, score: number) {
@@ -20,14 +20,16 @@ const PILLAR_LABELS: Record<Lang, Record<string, string>> = {
     crawlability: 'Crawlability',
     onpage: 'On-Page SEO',
     technical: 'Technical',
-    freshness: 'Freshness'
+    freshness: 'Freshness',
+    performance: 'Performance'
   },
   fa: {
     indexability: 'ایندکس‌پذیری',
     crawlability: 'قابلیت خزش',
     onpage: 'سئوی داخلی',
     technical: 'فنی',
-    freshness: 'تازگی محتوا'
+    freshness: 'تازگی محتوا',
+    performance: 'عملکرد'
   }
 };
 
@@ -40,6 +42,7 @@ export function buildTelegram(lang: Lang, args: {
   pillars?: Record<string, number>;
   wpData?: WpApiData;
   freshnessData?: FreshnessData;
+  lighthouseData?: LighthouseData;
 }) {
   const c = args.coverage;
   const checked = c.checked_pages;
@@ -95,6 +98,29 @@ export function buildTelegram(lang: Lang, args: {
     }
   }
 
+  let lighthouseSection = '';
+  if (args.lighthouseData) {
+    const lh = args.lighthouseData;
+    lighthouseSection = `\n⚡ Performance (Lighthouse):\n`;
+    lighthouseSection += `   Score: ${lh.performance}/100\n`;
+    if (lh.lcp !== null) {
+      const lcpStatus = lh.lcp <= 2500 ? '🟢' : lh.lcp <= 4000 ? '🟡' : '🔴';
+      lighthouseSection += `   LCP: ${(lh.lcp / 1000).toFixed(2)}s ${lcpStatus}\n`;
+    }
+    if (lh.cls !== null) {
+      const clsStatus = lh.cls <= 0.1 ? '🟢' : lh.cls <= 0.25 ? '🟡' : '🔴';
+      lighthouseSection += `   CLS: ${lh.cls.toFixed(3)} ${clsStatus}\n`;
+    }
+    if (lh.tbt !== null) {
+      const tbtStatus = lh.tbt <= 200 ? '🟢' : lh.tbt <= 600 ? '🟡' : '🔴';
+      lighthouseSection += `   TBT: ${lh.tbt}ms ${tbtStatus}\n`;
+    }
+    if (lh.opportunities && lh.opportunities.length > 0) {
+      lighthouseSection += `\n💡 Top Opportunities:\n`;
+      lighthouseSection += lh.opportunities.slice(0, 3).map(o => `   • ${o}`).join('\n');
+    }
+  }
+
   return (
     `📊 ${t(lang,'audit_complete')}\n` +
     `━━━━━━━━━━━━━━━━━━\n\n` +
@@ -112,6 +138,7 @@ export function buildTelegram(lang: Lang, args: {
     `${t(lang,'top_issues')}:\n${issues}\n\n` +
     `${t(lang,'quick_wins')}:\n${wins}` +
     wpSection +
-    freshnessSection
+    freshnessSection +
+    lighthouseSection
   );
 }
