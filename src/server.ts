@@ -7,6 +7,7 @@ import type { AuditCreateRequest } from './types.js';
 import { inferLang, t } from './utils/i18n.js';
 import { renderReportPdf } from './audit/pdf.js';
 import { generateHtmlReport } from './audit/htmlReport.js';
+import { generateStandaloneHtmlReport } from './audit/standaloneHtmlReport.js';
 import { serve } from '@hono/node-server';
 import { validateUrl, checkDomainRateLimit } from './audit/validation.js';
 import { performHealthCheck, getSystemMetrics } from './monitoring/health.js';
@@ -162,7 +163,7 @@ app.get('/v1/audits/:id/report.html', (c) => {
   }
 
   const report = JSON.parse(rep.report_json);
-  const html = generateHtmlReport(report, lang);
+  const html = generateStandaloneHtmlReport(report, lang);
 
   c.header('Content-Type', 'text/html; charset=utf-8');
   return c.body(html);
