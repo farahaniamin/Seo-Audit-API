@@ -7,13 +7,21 @@ export function buildFindings(lang: Lang, pages: Page[], score: any) {
   const items = score?.breakdown?.items ?? [];
 
   // For each issue, collect example URLs (capped)
-  const byId = new Map<string, string[]>();
+  const byId = new Map<string, Set<string>>();
   for (const p of pages) {
     for (const id of p.issues ?? []) {
-      if (!byId.has(id)) byId.set(id, []);
-      const arr = byId.get(id)!;
-      if (arr.length < 25) arr.push(p.final_url || p.url);
+      if (!byId.has(id)) byId.set(id, new Set());
+      const set = byId.get(id)!;
+      // Normalize URL: remove trailing slash
+      const normalizedUrl = (p.final_url || p.url).replace(/\/$/, '');
+      if (set.size < 25) set.add(normalizedUrl);
     }
+  }
+  
+  // Convert Sets to Arrays
+  const byIdArray = new Map<string, string[]>();
+  for (const [id, set] of byId) {
+    byIdArray.set(id, Array.from(set));
   }
 
   const findings = items
@@ -29,7 +37,7 @@ export function buildFindings(lang: Lang, pages: Page[], score: any) {
       penalty: it.penalty,
       weight: it.weight,
       quick_win: !!it.quick_win,
-      example_urls: byId.get(it.id) ?? [],
+      example_urls: byIdArray.get(it.id) ?? [],
     }));
 
   const top_issues = findings

@@ -42,12 +42,48 @@ function classifyUrl(u: string): 'product' | 'category' | 'blog' | 'page' | 'uti
   let p = '';
   try { p = new URL(u).pathname.toLowerCase(); } catch { return 'other'; }
 
-  if (/(\/cart\/|\/checkout\/|\/my-account\/|\/login\/|\/register\/|\/wp-admin\/)/.test(p)) return 'utility';
+  if (isUtilityPage(u)) return 'utility';
   if (/(\/product\/|\/shop\/|\/products\/)/.test(p)) return 'product';
   if (/(\/product-category\/|\/product_cat\/|\/category\/|\/tag\/)/.test(p)) return 'category';
   if (/(\/blog\/|\/post\/|\/\d{4}\/\d{2}\/)/.test(p)) return 'blog';
   if (/(\/about|\/contact|\/services|\/portfolio|\/team|\/faq)/.test(p)) return 'page';
   return 'other';
+}
+
+/**
+ * Check if a URL is a utility page (cart, login, auth, etc.)
+ * These pages are excluded from certain SEO checks
+ */
+function isUtilityPage(u: string): boolean {
+  let p = '';
+  try { p = new URL(u).pathname.toLowerCase(); } catch { return false; }
+  
+  // Common utility page patterns
+  const utilityPatterns = [
+    /\/cart\/?$/,
+    /\/checkout\/?$/,
+    /\/my-account\/?$/,
+    /\/login\/?$/,
+    /\/register\/?$/,
+    /\/auth\/?$/,
+    /\/wp-admin/,
+    /\/wp-login/,
+    /\/admin/,
+    /\/dashboard/,
+    /\/account/,
+    /\/profile/,
+    /\/user\//,
+    /\/password/,
+    /\/reset/,
+    /\/forgot/,
+    /\/logout/,
+    /\/signin/,
+    /\/signup/,
+    /\/order\//,  // Individual order pages
+    /\/thank-you/, // Thank you pages after purchase
+  ];
+  
+  return utilityPatterns.some(pattern => pattern.test(p));
 }
 
 function pickStratified(urls: string[], limit: number, siteType: SiteType): string[] {
@@ -192,13 +228,19 @@ export async function smartSample(startUrl: string, limits: Limits, candidates: 
     if (page.canonical && !sameCanonical(page.canonical, page.final_url)) issues.push('E06');
     if (!page.title || page.title.trim().length < 10) issues.push('F01');
     if (!page.meta_desc || page.meta_desc.trim().length < 50) issues.push('F04');
-    if (page.h1_count === 0) issues.push('F07');
-    if (page.h1_count > 1) issues.push('F08');
+    
+    // Skip H1 and content checks for utility pages
+    const isUtility = isUtilityPage(page.final_url || page.url);
+    if (!isUtility) {
+      if (page.h1_count === 0) issues.push('F07');
+      if (page.h1_count > 1) issues.push('F08');
+      if ((page.word_count ?? 0) < 300) issues.push('C03'); // Thin content (<300 words)
+    }
+    
     if (page.images_missing_alt > 0) issues.push('G01');
     
     // Phase 1: New issues
     if (!page.has_viewport) issues.push('M01'); // Missing mobile viewport
-    if ((page.word_count ?? 0) < 300) issues.push('C03'); // Thin content (<300 words)
     if (!page.is_https) issues.push('S01'); // Not using HTTPS
     if (page.has_mixed_content) issues.push('S02'); // Mixed content (http on https)
     if ((page.ttfb_ms ?? 0) > 800) issues.push('P01'); // Slow TTFB (>800ms)

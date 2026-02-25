@@ -47,9 +47,11 @@ export function calculateFreshnessByType(
 ): Record<string, { score: number; total: number; fresh: number; stale: number; threshold: number }> {
   const byType: Record<string, WpContentItem[]> = {};
   
-  // Group by type
+  // Group by type - ONLY main content types
+  const allowedTypes = ['post', 'product', 'page'];
+  
   items.forEach(item => {
-    if (item.status === 'publish') {
+    if (item.status === 'publish' && allowedTypes.includes(item.type)) {
       if (!byType[item.type]) byType[item.type] = [];
       byType[item.type].push(item);
     }
@@ -81,6 +83,68 @@ export function calculateFreshnessByType(
       fresh,
       stale,
       threshold: thresholdMonths
+    };
+  });
+  
+  return results;
+}
+
+/**
+ * Get last update info for each main content type
+ * Returns "last updated X ago" format
+ */
+export function getLastUpdateByType(
+  items: WpContentItem[],
+  lang: 'en' | 'fa' = 'en'
+): Record<string, { lastUpdate: string; daysAgo: number; itemCount: number }> {
+  const allowedTypes = ['post', 'product', 'page'];
+  const byType: Record<string, WpContentItem[]> = {};
+  
+  // Group by type
+  items.forEach(item => {
+    if (item.status === 'publish' && allowedTypes.includes(item.type)) {
+      if (!byType[item.type]) byType[item.type] = [];
+      byType[item.type].push(item);
+    }
+  });
+  
+  const results: Record<string, { lastUpdate: string; daysAgo: number; itemCount: number }> = {};
+  const now = Date.now();
+  
+  Object.entries(byType).forEach(([type, typeItems]) => {
+    if (typeItems.length === 0) return;
+    
+    // Find most recent update
+    const sorted = typeItems.sort((a, b) => 
+      new Date(b.modified).getTime() - new Date(a.modified).getTime()
+    );
+    
+    const latest = sorted[0];
+    const modified = new Date(latest.modified).getTime();
+    const daysAgo = Math.floor((now - modified) / (1000 * 60 * 60 * 24));
+    
+    // Format "X ago"
+    let lastUpdate: string;
+    if (lang === 'fa') {
+      if (daysAgo === 0) lastUpdate = 'امروز';
+      else if (daysAgo === 1) lastUpdate = 'دیروز';
+      else if (daysAgo < 7) lastUpdate = `${daysAgo} روز پیش`;
+      else if (daysAgo < 30) lastUpdate = `${Math.floor(daysAgo / 7)} هفته پیش`;
+      else if (daysAgo < 365) lastUpdate = `${Math.floor(daysAgo / 30)} ماه پیش`;
+      else lastUpdate = `${Math.floor(daysAgo / 365)} سال پیش`;
+    } else {
+      if (daysAgo === 0) lastUpdate = 'Today';
+      else if (daysAgo === 1) lastUpdate = 'Yesterday';
+      else if (daysAgo < 7) lastUpdate = `${daysAgo} days ago`;
+      else if (daysAgo < 30) lastUpdate = `${Math.floor(daysAgo / 7)} weeks ago`;
+      else if (daysAgo < 365) lastUpdate = `${Math.floor(daysAgo / 30)} months ago`;
+      else lastUpdate = `${Math.floor(daysAgo / 365)} years ago`;
+    }
+    
+    results[type] = {
+      lastUpdate,
+      daysAgo,
+      itemCount: typeItems.length
     };
   });
   
@@ -289,7 +353,8 @@ export function getLatestContent(
  */
 export function formatFreshnessData(
   items: WpContentItem[],
-  score: number
+  score: number,
+  lang: 'en' | 'fa' = 'en'
 ): {
   score: number;
   stale_count: number;
@@ -298,6 +363,7 @@ export function formatFreshnessData(
   latest_products: any[];
   latest_posts: any[];
   by_type: Record<string, { score: number; total: number; fresh: number; stale: number; threshold: number }>;
+  last_update_by_type: Record<string, { lastUpdate: string; daysAgo: number; itemCount: number }>;
   thresholds: Record<string, number>;
   recommendations: string[];
 } {
@@ -312,6 +378,9 @@ export function formatFreshnessData(
   // Get type-specific breakdown
   const byType = calculateFreshnessByType(items);
   
+  // Get last update info by type
+  const lastUpdateByType = getLastUpdateByType(items, lang);
+  
   // Grade based on score
   let grade = 'F';
   if (score >= 90) grade = 'A';
@@ -320,7 +389,7 @@ export function formatFreshnessData(
   else if (score >= 60) grade = 'D';
   
   // Generate specific recommendations
-  const recommendations = getFreshnessRecommendations(items);
+  const recommendations = getFreshnessRecommendations(items, lang);
   
   return {
     score,
@@ -330,6 +399,7 @@ export function formatFreshnessData(
     latest_products,
     latest_posts,
     by_type: byType,
+    last_update_by_type: lastUpdateByType,
     thresholds: FRESHNESS_THRESHOLDS,
     recommendations,
   };

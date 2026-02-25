@@ -173,7 +173,7 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     // Get detailed breakdown by content type
     const freshnessByType = calculateFreshnessByType(wpData.contentItems);
     
-    const formattedData = formatFreshnessData(wpData.contentItems, score);
+    const formattedData = formatFreshnessData(wpData.contentItems, score, lang);
     freshnessData = {
       ...formattedData,
       by_type: freshnessByType,
