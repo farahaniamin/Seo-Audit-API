@@ -485,6 +485,18 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
       font-weight: 700;
     }
     
+    .penalty-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: var(--color-error-light);
+      color: var(--color-error);
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    
     .view-pages {
       font-size: 12px;
       color: var(--color-info);
@@ -696,6 +708,67 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
     .bg-red { background: var(--color-error); }
     .bg-blue { background: var(--color-info); }
     
+    /* Pages Breakdown Section */
+    .pages-breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    
+    .breakdown-card {
+      background: var(--color-gray-50);
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-gray-200);
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    
+    .breakdown-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .breakdown-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    
+    .breakdown-type {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-gray-600);
+      margin-bottom: 4px;
+    }
+    
+    .breakdown-count {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--color-gray-900);
+      margin-bottom: 4px;
+    }
+    
+    .breakdown-percentage {
+      font-size: 12px;
+      color: var(--color-gray-500);
+      font-weight: 500;
+    }
+    
+    .breakdown-progress {
+      height: 6px;
+      background: var(--color-gray-200);
+      border-radius: 100px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    
+    .breakdown-progress-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 0.5s ease;
+    }
+    
     /* Freshness Section */
     .freshness-grid {
       display: grid;
@@ -851,6 +924,9 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
         <div class="summary-label">${isRTL ? 'پایین' : 'Low'}</div>
       </div>
     </div>
+    
+    <!-- Pages Breakdown -->
+    ${generatePagesBreakdownSection(report.coverage?.pages_breakdown, lang)}
     
     <!-- Pillar Scores with Visual Checks -->
     <div class="section">
@@ -1318,23 +1394,27 @@ function generateDetailedChecksSection(pillars: any, issuesByPillar: any, breakd
       <div class="checks-grid">
         ${allChecks.map((check: any) => {
           const foundIssue: any = foundIssues.get(check.id);
-          const isPassed = !foundIssue;
+          // Check if issue has actual penalty (> 0) to determine pass/fail
+          const hasPenalty = foundIssue && foundIssue.penalty > 0;
+          const isPassed = !hasPenalty;
           const severity = foundIssue?.severity || '';
           const icon = isPassed ? '✓' : severity === 'critical' || severity === 'high' ? '✕' : '!';
           const statusClass = isPassed ? 'pass' : severity === 'critical' || severity === 'high' ? 'fail' : 'warning';
           const affectedPages = foundIssue?.affected_pages || 0;
           const exampleUrls = foundIssue?.example_urls || [];
+          const penalty = foundIssue?.penalty || 0;
           
           let cardHtml = `
-          <div class="check-card ${isPassed ? 'check-passed' : 'check-failed'}" data-check-id="${check.id}" style="cursor: ${foundIssue ? 'pointer' : 'default'};" ${foundIssue ? `onclick="toggleCheckDetails('${check.id}')"` : ''}>
+          <div class="check-card ${isPassed ? 'check-passed' : 'check-failed'}" data-check-id="${check.id}" style="cursor: ${hasPenalty ? 'pointer' : 'default'};" ${hasPenalty ? `onclick="toggleCheckDetails('${check.id}')"` : ''}>
             <div class="check-icon ${statusClass}">${icon}</div>
             <div class="check-content">
               <div class="check-title">${check.id} - ${escapeHtml(check.title)}</div>
               <div class="check-desc">${escapeHtml(check.desc)}</div>
-              ${foundIssue ? `
+              ${hasPenalty ? `
                 <div class="check-status-line">
                   <span class="severity-badge severity-${severity}">${severity}</span>
                   <span class="check-count">${affectedPages} ${isRTL ? 'صفحه' : 'pages affected'}</span>
+                  <span class="penalty-badge">-${penalty.toFixed(1)} pts</span>
                   ${exampleUrls.length > 0 ? `<span class="view-pages">${isRTL ? 'مشاهده صفحات' : 'View pages'} ▼</span>` : ''}
                 </div>
               ` : `
@@ -1492,6 +1572,80 @@ function generateModernFreshnessSection(freshness: any, lang: 'en' | 'fa'): stri
       </ul>
     </div>
     ` : ''}
+  </div>
+  `;
+}
+
+function generatePagesBreakdownSection(pagesBreakdown: any, lang: 'en' | 'fa'): string {
+  if (!pagesBreakdown || !pagesBreakdown.by_type || Object.keys(pagesBreakdown.by_type).length === 0) {
+    return '';
+  }
+  
+  const isRTL = lang === 'fa';
+  const total = pagesBreakdown.total;
+  const byType = pagesBreakdown.by_type;
+  
+  // Type icons mapping
+  const typeIcons: Record<string, string> = {
+    'Products': '🛍️',
+    'Blog Posts': '📝',
+    'Pages': '📄',
+    'Taxonomy': '🏷️',
+    'Author': '👤',
+    'Media': '🖼️',
+    'Other': '📎'
+  };
+  
+  // Type colors for progress bars
+  const typeColors: Record<string, string> = {
+    'Products': '#3b82f6',
+    'Blog Posts': '#10b981',
+    'Pages': '#f59e0b',
+    'Taxonomy': '#8b5cf6',
+    'Author': '#ec4899',
+    'Media': '#0ea5e9',
+    'Other': '#6b7280'
+  };
+  
+  // Sort by count descending
+  const sortedTypes = Object.entries(byType).sort((a: any, b: any) => b[1].count - a[1].count);
+  
+  let breakdownCards = '';
+  sortedTypes.forEach(([type, data]: [string, any]) => {
+    const icon = typeIcons[type] || '📄';
+    const color = typeColors[type] || '#6b7280';
+    const percentage = data.percentage;
+    
+    breakdownCards += `
+    <div class="breakdown-card">
+      <div class="breakdown-icon">${icon}</div>
+      <div class="breakdown-type">${type}</div>
+      <div class="breakdown-count">${data.count}</div>
+      <div class="breakdown-percentage">${percentage}% ${isRTL ? 'از کل' : 'of total'}</div>
+      <div class="breakdown-progress">
+        <div class="breakdown-progress-fill" style="width: ${percentage}%; background: ${color};"></div>
+      </div>
+    </div>
+    `;
+  });
+  
+  return `
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">📑</div>
+      <div class="section-title">${isRTL ? 'تفکیک صفحات بررسی‌شده' : 'Pages Breakdown'}</div>
+      <div class="section-score">${total}</div>
+    </div>
+    
+    <p style="color: var(--color-gray-600); margin-bottom: 20px; font-size: 14px;">
+      ${isRTL 
+        ? 'صفحات بررسی‌شده بر اساس نوع محتوا دسته‌بندی شده‌اند:'
+        : 'Pages checked categorized by content type:'}
+    </p>
+    
+    <div class="pages-breakdown-grid">
+      ${breakdownCards}
+    </div>
   </div>
   `;
 }

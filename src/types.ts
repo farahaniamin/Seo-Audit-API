@@ -47,6 +47,11 @@ export type Coverage = {
   checked_ratio?: number | null;
   link_checks: number;
   note?: string;
+  /** Breakdown of checked pages by content type */
+  pages_breakdown?: {
+    total: number;
+    by_type: Record<string, { count: number; percentage: number }>;
+  };
 };
 
 export type Finding = {

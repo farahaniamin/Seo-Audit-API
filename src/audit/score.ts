@@ -77,6 +77,9 @@ function clamp01(x: number) {
 }
 
 function penaltyFor(def: IssueDef, ratio: number) {
+  // No penalty if no pages are affected
+  if (ratio <= 0) return 0;
+  
   // Apply max_ratio cap to prevent false positive explosions
   const cappedRatio = def.max_ratio ? Math.min(ratio, def.max_ratio) : ratio;
   const r = clamp01(cappedRatio);

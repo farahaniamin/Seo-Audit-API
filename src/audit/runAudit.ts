@@ -1,4 +1,5 @@
 import type { AuditCreateRequest, Limits, Profile, Report, WpApiData, FreshnessData, Finding, LighthouseData } from '../types.js';
+import type { Page } from './smart.js';
 import { fetchRobots } from './robots.js';
 import { discoverSitemaps, sampleSitemapUrls } from './sitemap.js';
 import { smartSample } from './smart.js';
@@ -205,14 +206,18 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
     : sitemaps.estimated_total_urls;
   const checkedRatio = estimatedTotal && estimatedTotal > 0 ? checked / estimatedTotal : null;
 
+  // Calculate pages breakdown by content type
+  const pagesBreakdown = calculatePagesBreakdown(crawl.pages, wpData);
+  
   const coverage = {
-    mode: profile === 'smart' ? 'sample' : 'crawl',
+    mode: (profile === 'full' ? 'crawl' : 'sample') as 'sample' | 'crawl',
     checked_pages: checked,
     discovered_pages: crawl.discovered,
     estimated_total_pages: estimatedTotal,
     checked_ratio: checkedRatio,
     link_checks,
-    note: profile === 'smart' ? 'sample-based' : undefined
+    note: profile === 'smart' ? 'sample-based' : undefined,
+    pages_breakdown: pagesBreakdown
   } as const;
 
   const text_fa = buildTelegram('fa', { 
@@ -294,4 +299,73 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
   };
 
   return report;
+}
+
+/**
+ * Calculate breakdown of pages by content type
+ * Uses WordPress data if available, otherwise categorizes by URL patterns
+ */
+function calculatePagesBreakdown(
+  pages: Page[],
+  wpData: WpApiData
+): { total: number; by_type: Record<string, { count: number; percentage: number }> } {
+  const total = pages.length;
+  const byType: Record<string, number> = {};
+  
+  if (wpData.available && wpData.contentItems.length > 0) {
+    // Use WordPress content types
+    const wpUrls = new Set(wpData.contentItems.map(item => item.url));
+    
+    pages.forEach(page => {
+      // Try to match page with WP content
+      const wpItem = wpData.contentItems.find(item => 
+        item.url === page.url || item.url === page.final_url
+      );
+      
+      if (wpItem) {
+        const type = wpItem.type === 'product' ? 'Products' : 
+                    wpItem.type === 'post' ? 'Blog Posts' : 
+                    wpItem.type === 'page' ? 'Pages' : 
+                    wpItem.type;
+        byType[type] = (byType[type] || 0) + 1;
+      } else {
+        // Categorize by URL pattern
+        const type = categorizeByUrl(page.url);
+        byType[type] = (byType[type] || 0) + 1;
+      }
+    });
+  } else {
+    // Categorize all pages by URL patterns
+    pages.forEach(page => {
+      const type = categorizeByUrl(page.url);
+      byType[type] = (byType[type] || 0) + 1;
+    });
+  }
+  
+  // Convert to final format with percentages
+  const result: Record<string, { count: number; percentage: number }> = {};
+  Object.entries(byType).forEach(([type, count]) => {
+    result[type] = {
+      count,
+      percentage: Math.round((count / total) * 100)
+    };
+  });
+  
+  return { total, by_type: result };
+}
+
+/**
+ * Categorize a URL by its pattern
+ */
+function categorizeByUrl(url: string): string {
+  const lowerUrl = url.toLowerCase();
+  
+  if (lowerUrl.includes('/product') || lowerUrl.includes('/shop/')) return 'Products';
+  if (lowerUrl.includes('/blog/') || lowerUrl.includes('/post/') || lowerUrl.includes('/news/')) return 'Blog Posts';
+  if (lowerUrl.includes('/category/') || lowerUrl.includes('/tag/')) return 'Taxonomy';
+  if (lowerUrl.includes('/author/') || lowerUrl.includes('/user/')) return 'Author';
+  if (lowerUrl.match(/\.(jpg|jpeg|png|gif|pdf|doc|zip)$/)) return 'Media';
+  if (lowerUrl === '/' || lowerUrl.endsWith('/')) return 'Pages';
+  
+  return 'Other';
 }
