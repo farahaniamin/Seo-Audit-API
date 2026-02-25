@@ -1530,23 +1530,38 @@ function generateModernFreshnessSection(freshness: any, lang: 'en' | 'fa'): stri
   const isRTL = lang === 'fa';
   const score = freshness.score || 0;
   const color = getGradeColor(score);
-  const byType = freshness.by_type || {};
+  const lastUpdateByType = freshness.last_update_by_type || {};
+  
+  // Type labels and icons
+  const typeConfig: Record<string, { label: string; icon: string }> = {
+    post: { label: isRTL ? 'پست‌های وبلاگ' : 'Blog Posts', icon: '📝' },
+    product: { label: isRTL ? 'محصولات' : 'Products', icon: '🛍️' },
+    page: { label: isRTL ? 'صفحات' : 'Pages', icon: '📄' }
+  };
   
   let typeCards = '';
-  Object.entries(byType).forEach(([type, data]: [string, any]) => {
-    const typeColor = getGradeColor(data.score);
-    const typeLabel = isRTL 
-      ? (type === 'post' ? 'پست‌ها' : type === 'product' ? 'محصولات' : type === 'page' ? 'صفحات' : type)
-      : (type === 'post' ? 'Blog Posts' : type === 'product' ? 'Products' : type === 'page' ? 'Pages' : type);
+  Object.entries(lastUpdateByType).forEach(([type, data]: [string, any]) => {
+    const config = typeConfig[type] || { label: type, icon: '📄' };
+    
+    // Determine color based on days ago
+    let statusColor = '#10b981'; // Green
+    if (data.daysAgo > 90) statusColor = '#ef4444'; // Red (>3 months)
+    else if (data.daysAgo > 30) statusColor = '#f59e0b'; // Yellow (>1 month)
     
     typeCards += `
     <div class="freshness-card">
-      <div class="freshness-type">${typeLabel}</div>
-      <div class="freshness-score" style="color: ${typeColor};">${data.score}%</div>
-      <div class="freshness-detail">
-        ${isRTL 
-          ? `${data.fresh} تازه / ${data.stale} قدیمی (${data.threshold} ماه)`
-          : `${data.fresh} fresh / ${data.stale} stale (${data.threshold}mo threshold)`}
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <span style="font-size: 24px;">${config.icon}</span>
+        <div class="freshness-type">${config.label}</div>
+      </div>
+      <div style="font-size: 13px; color: var(--color-gray-500); margin-bottom: 4px;">
+        ${isRTL ? 'آخرین به‌روزرسانی:' : 'Last updated:'}
+      </div>
+      <div style="font-size: 20px; font-weight: 700; color: ${statusColor};">
+        ${data.lastUpdate}
+      </div>
+      <div style="font-size: 12px; color: var(--color-gray-400); margin-top: 4px;">
+        ${data.itemCount} ${isRTL ? 'مورد' : 'items'}
       </div>
     </div>
     `;
@@ -1556,9 +1571,15 @@ function generateModernFreshnessSection(freshness: any, lang: 'en' | 'fa'): stri
   <div class="section">
     <div class="section-header">
       <div class="section-icon" style="background: linear-gradient(135deg, #ec4899, #db2777); color: white;">🕐</div>
-      <div class="section-title">${isRTL ? 'تازگی محتوا' : 'Content Freshness'}</div>
+      <div class="section-title">${isRTL ? 'آخرین به‌روزرسانی‌ها' : 'Last Updates'}</div>
       <div class="section-score" style="color: ${color};">${score}%</div>
     </div>
+    
+    <p style="color: var(--color-gray-600); margin-bottom: 20px; font-size: 14px;">
+      ${isRTL 
+        ? 'زمان آخرین به‌روزرسانی محتوا برای هر بخش:'
+        : 'When content was last updated for each section:'}
+    </p>
     
     <div class="freshness-grid">
       ${typeCards}
