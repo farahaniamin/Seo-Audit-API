@@ -1,8 +1,8 @@
 # SEO Audit Bot - Technical Documentation
 
 **Project:** SEO Audit Bot  
-**Version:** 2.0  
-**Last Updated:** February 16, 2026  
+**Version:** 3.0  
+**Last Updated:** February 25, 2026  
 **Author:** farahani  
 **Repository:** https://github.com/farahaniamin/Seo-Audit-API  
 

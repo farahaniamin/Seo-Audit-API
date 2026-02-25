@@ -116,7 +116,7 @@ src/
 - `src/audit/runAudit.ts` - Main audit orchestration, coordinates all modules
 - `src/audit/wpApi.ts` - WordPress REST API integration, fetches content metadata
 - `src/audit/freshness.ts` - Content freshness calculations and latest content tracking
-- `src/audit/score.ts` - 5-pillar scoring algorithm (Indexability, Crawlability, On-Page, Technical, Freshness)
+- `src/audit/score.ts` - 6-pillar scoring algorithm (Indexability, Crawlability, On-Page, Technical, Freshness, Performance)
 - `src/audit/smart.ts` - Smart sampling with stratified selection
 - `src/audit/siteType.ts` - Site classification (ecommerce/corporate/content)
 - `src/db.ts` - All database operations, SQLite schema
@@ -205,3 +205,59 @@ const scores = scoreSite(pages, totals, lang, siteType, freshnessData);
 - Static assets (CSS, JS, images) are filtered from crawl results
 - API endpoints (/wp-json/, /xmlrpc.php) are blocked from crawling
 - See `SCORING.md` for detailed scoring algorithm documentation
+
+## v3.0 Major Updates (February 2026)
+
+### Fixed Critical Scoring Bug
+**Problem:** Issues with 0 affected pages were receiving penalties (minimum 0.2 ratio factor)
+**Solution:** `penaltyFor()` now returns 0 when ratio <= 0
+**Impact:** Indexability scores now correctly show 100/100 when no real issues exist
+
+### UI Redesign
+- **New HTML Report:** Modern card-based design in `src/audit/standaloneHtmlReport.ts`
+- **Pass/Fail Badges:** Clear visual indicators for each check
+- **Penalty Transparency:** Shows exact penalty points (-X.X pts)
+- **Clickable Details:** Expandable page lists with smooth animations
+- **Pages Breakdown:** Visual grid showing content type distribution
+
+### Freshness Section Simplified
+- **Before:** Complex percentages with technical types (jet-engine, elementor_snippet)
+- **After:** Simple "Last updated X ago" format
+- **Only Main Types:** post, product, page (filter in `calculateFreshnessByType()`)
+- **Color Coding:** Green (<1mo), Yellow (1-3mo), Red (>3mo)
+
+### URL Deduplication
+- **Set-based tracking:** Prevents duplicate URLs in issue lists
+- **Normalization:** Removes trailing slashes
+- **Location:** `src/audit/summary.ts` in `buildFindings()`
+
+### Smart Utility Page Detection
+- **Patterns:** `/cart`, `/login`, `/checkout`, `/auth`, `/wp-admin`, etc.
+- **Skipped Checks:** F07 (Missing H1), F08 (Multiple H1s), C03 (Thin content)
+- **Location:** `isUtilityPage()` function in `src/audit/smart.ts`
+
+### New Indexability Issues
+- **E07:** robots.txt blocking (weight: 20)
+- **E12:** X-Robots-Tag header (weight: 18)
+- **E14:** Cross-domain canonical (weight: 15)
+- **E18:** Password protected (weight: 12)
+- **E19:** Infinite redirect loops (weight: 15)
+
+### Updated Weight Distribution
+```
+Indexability:  15% (was 19%) - Balanced
+Crawlability:  12% (was 15%) - Navigation
+On-Page:       20-22% - Content quality
+Technical:     18-19% - Performance (increased)
+Performance:   18-20% - Core Web Vitals (increased)
+Freshness:     15% - When WP data available
+```
+
+### Key Files Changed in v3.0
+- `src/audit/score.ts` - Fixed penalty calculation
+- `src/audit/freshness.ts` - Simplified display, filter types
+- `src/audit/smart.ts` - Utility page detection
+- `src/audit/summary.ts` - URL deduplication
+- `src/audit/standaloneHtmlReport.ts` - Complete UI redesign
+- `src/audit/runAudit.ts` - Pages breakdown calculation
+- `src/types.ts` - Added pages_breakdown to Coverage
