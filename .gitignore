@@ -30,3 +30,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Test reports (generated HTML files)
+*.html
+!src/**/*.html
