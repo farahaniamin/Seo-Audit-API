@@ -16,25 +16,36 @@ type IssueDef = {
 
 // Refined issue definitions with better weighting
 const ISSUE_DEFS: IssueDef[] = [
-  // Critical issues - major impact
-  { id: 'E01', pillar: 'indexability', weight: 25, severity: 'critical', quick_win: true, max_ratio: 1.0 }, // noindex - blocks indexing
-  { id: 'E02', pillar: 'crawlability', weight: 20, severity: 'critical', quick_win: true, max_ratio: 1.0 }, // 4xx errors - broken pages
+  // INDEXABILITY - Critical permissions
+  { id: 'E01', pillar: 'indexability', weight: 25, severity: 'critical', quick_win: true, max_ratio: 1.0 }, // noindex meta tag - COMPLETELY blocks indexing
+  { id: 'E07', pillar: 'indexability', weight: 20, severity: 'critical', quick_win: true, max_ratio: 1.0 }, // robots.txt blocking - Prevents crawling
+  { id: 'E12', pillar: 'indexability', weight: 18, severity: 'high', quick_win: true, max_ratio: 1.0 }, // X-Robots-Tag header - Server-level blocking
+  { id: 'E14', pillar: 'indexability', weight: 15, severity: 'high', quick_win: true, max_ratio: 0.8 }, // Cross-domain canonical - Wrong canonical target
+  { id: 'E18', pillar: 'indexability', weight: 12, severity: 'high', quick_win: false, max_ratio: 1.0 }, // Password/auth protected - Inaccessible to crawlers
   
-  // High impact issues
+  // CRAWLABILITY - Navigation barriers
+  { id: 'E02', pillar: 'crawlability', weight: 20, severity: 'critical', quick_win: true, max_ratio: 1.0 }, // 4xx errors - broken pages
+  { id: 'E19', pillar: 'crawlability', weight: 15, severity: 'high', quick_win: true, max_ratio: 1.0 }, // Infinite redirect loops - Crawler trap
+  { id: 'E04', pillar: 'crawlability', weight: 6, severity: 'medium', max_ratio: 0.5 }, // redirect chains - inefficient crawling
+  { id: 'L06', pillar: 'crawlability', weight: 5, severity: 'medium', max_ratio: 1.0 }, // Deep page (>3 levels from homepage)
+  
+  // High impact issues - ON-PAGE
   { id: 'E06', pillar: 'technical', weight: 12, severity: 'high', quick_win: true, max_ratio: 0.8 }, // canonical mismatch - SEO confusion
   { id: 'F01', pillar: 'onpage', weight: 10, severity: 'high', quick_win: true, max_ratio: 1.0 }, // missing title - crucial for SEO
   { id: 'F04', pillar: 'onpage', weight: 8, severity: 'high', quick_win: true, max_ratio: 1.0 }, // missing meta desc - CTR impact
   
   // Medium impact - technical
-  { id: 'E04', pillar: 'crawlability', weight: 4, severity: 'medium', max_ratio: 0.5 }, // redirect chains - REDUCED (was 6, now 4) and capped
   { id: 'F07', pillar: 'onpage', weight: 6, severity: 'medium', quick_win: true, max_ratio: 1.0 }, // missing h1
   { id: 'F08', pillar: 'onpage', weight: 5, severity: 'medium', quick_win: true, max_ratio: 1.0 }, // multiple h1
   
   // Lower impact - accessibility
   { id: 'G01', pillar: 'technical', weight: 5, severity: 'low', quick_win: true, max_ratio: 0.9 }, // missing alt - REDUCED (was 7, now 5)
   
-  // Freshness issue (from WP API analysis)
-  { id: 'C01', pillar: 'freshness', weight: 15, severity: 'high', max_ratio: 1.0 }, // stale content (>6 months)
+  // Freshness issue (from WP API analysis) - Multiple content types
+  { id: 'C01', pillar: 'freshness', weight: 18, severity: 'high', max_ratio: 1.0 }, // Stale blog posts (>3 months) - content marketing critical
+  { id: 'C02', pillar: 'freshness', weight: 12, severity: 'medium', max_ratio: 1.0 }, // Stale products (>6 months) - e-commerce
+  { id: 'C04', pillar: 'freshness', weight: 8, severity: 'low', max_ratio: 1.0 }, // Stale pages (>12 months) - static content
+  { id: 'C05', pillar: 'freshness', weight: 15, severity: 'high', max_ratio: 1.0 }, // Overall site freshness (<50% fresh)
   
   // Phase 1: New issues
   { id: 'M01', pillar: 'technical', weight: 12, severity: 'high', quick_win: true, max_ratio: 1.0 }, // Missing mobile viewport - critical for mobile-first indexing
@@ -51,7 +62,7 @@ const ISSUE_DEFS: IssueDef[] = [
   
   // Phase 3: Internal link analysis issues
   { id: 'L05', pillar: 'technical', weight: 12, severity: 'high', quick_win: true, max_ratio: 1.0 }, // Orphan page (0 inbound links)
-  { id: 'L06', pillar: 'crawlability', weight: 6, severity: 'medium', max_ratio: 1.0 }, // Deep page (>3 levels from homepage)
+  { id: 'E13', pillar: 'technical', weight: 10, severity: 'medium', quick_win: true, max_ratio: 0.8 }, // Soft 404s (200 status but "not found" content)
 ];
 
 const SEVERITY_MULT: Record<Severity, number> = {
@@ -163,17 +174,18 @@ export function scoreSite(
   };
 
   // Dynamic weights based on site type and data availability
+  // Better distribution: Technical and Performance get more weight, Indexability/Crawlability reduced
   const baseWeights =
     siteType === 'ecommerce'
-      ? { indexability: 0.20, crawlability: 0.15, onpage: 0.22, technical: 0.15, freshness: 0.12, performance: 0.16 }
+      ? { indexability: 0.15, crawlability: 0.12, onpage: 0.20, technical: 0.18, freshness: 0.15, performance: 0.20 }
       : siteType === 'corporate'
-        ? { indexability: 0.18, crawlability: 0.15, onpage: 0.24, technical: 0.15, freshness: 0.14, performance: 0.14 }
-        : { indexability: 0.19, crawlability: 0.15, onpage: 0.23, technical: 0.15, freshness: 0.14, performance: 0.14 };
+        ? { indexability: 0.14, crawlability: 0.11, onpage: 0.22, technical: 0.19, freshness: 0.16, performance: 0.18 }
+        : { indexability: 0.15, crawlability: 0.12, onpage: 0.21, technical: 0.18, freshness: 0.15, performance: 0.19 };
 
   // Adjust weights if freshness data not available
   const weights = { ...baseWeights };
   if (!freshnessData) {
-    // Redistribute freshness weight to other pillars
+    // Redistribute freshness weight to other pillars proportionally
     const freshnessWeight = weights.freshness;
     weights.freshness = 0;
     const otherPillars = ['indexability', 'crawlability', 'onpage', 'technical', 'performance'] as const;

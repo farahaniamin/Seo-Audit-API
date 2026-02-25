@@ -1,5 +1,5 @@
-// Standalone HTML Report Generator with embedded Chart.js
-// This version includes Chart.js inline to avoid CDN loading issues
+// Modern SEO Audit Report Generator
+// Beautiful visual design with pass/fail indicators
 
 export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'en'): string {
   const isRTL = lang === 'fa';
@@ -7,6 +7,7 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
   const grade = getGrade(overallScore);
   const gradeColor = getGradeColor(overallScore);
   const pillars = report.scores?.pillars || {};
+  const breakdown = report.scores?.breakdown;
   
   // Freshness data
   const freshnessData = report.freshness;
@@ -19,6 +20,16 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
   const medium = findings.filter((f: any) => f.severity === 'medium');
   const low = findings.filter((f: any) => f.severity === 'low');
   
+  // Group issues by pillar
+  const issuesByPillar = {
+    indexability: findings.filter((f: any) => f.pillar === 'indexability'),
+    crawlability: findings.filter((f: any) => f.pillar === 'crawlability'),
+    onpage: findings.filter((f: any) => f.pillar === 'onpage'),
+    technical: findings.filter((f: any) => f.pillar === 'technical'),
+    freshness: findings.filter((f: any) => f.pillar === 'freshness'),
+    performance: findings.filter((f: any) => f.pillar === 'performance'),
+  };
+  
   // Lighthouse data
   const lighthouse = report.lighthouse;
   const hasLighthouse = lighthouse && lighthouse.performance !== null;
@@ -30,248 +41,618 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SEO Audit Report - ${escapeHtml(report.url)}</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --color-success: #10b981;
+      --color-success-light: #d1fae5;
+      --color-warning: #f59e0b;
+      --color-warning-light: #fef3c7;
+      --color-error: #ef4444;
+      --color-error-light: #fee2e2;
+      --color-info: #3b82f6;
+      --color-info-light: #dbeafe;
+      --color-gray-50: #f9fafb;
+      --color-gray-100: #f3f4f6;
+      --color-gray-200: #e5e7eb;
+      --color-gray-300: #d1d5db;
+      --color-gray-600: #4b5563;
+      --color-gray-700: #374151;
+      --color-gray-800: #1f2937;
+      --color-gray-900: #111827;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --radius-sm: 6px;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+    }
+    
     body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f3f4f6;
-      color: #1f2937;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--color-gray-100);
+      color: var(--color-gray-800);
       line-height: 1.6;
     }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
     
     /* Header */
     .header {
       background: white;
-      border-radius: 12px;
-      padding: 24px;
+      border-radius: var(--radius-xl);
+      padding: 32px;
       margin-bottom: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-md);
     }
+    
     .header-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-    }
-    .logo { display: flex; align-items: center; gap: 12px; }
-    .logo-icon {
-      width: 40px; height: 40px;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      color: white; font-weight: bold;
+      margin-bottom: 28px;
     }
     
-    /* Score Display */
+    .logo { 
+      display: flex; 
+      align-items: center; 
+      gap: 16px; 
+    }
+    
+    .logo-icon {
+      width: 48px; 
+      height: 48px;
+      background: linear-gradient(135deg, var(--color-info), #8b5cf6);
+      border-radius: var(--radius);
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      color: white; 
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: var(--shadow);
+    }
+    
+    /* Score Section */
     .score-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 40px;
+      gap: 48px;
       align-items: center;
     }
+    
     @media (max-width: 768px) {
-      .score-section { grid-template-columns: 1fr; }
+      .score-section { grid-template-columns: 1fr; gap: 32px; }
     }
     
-    .score-gauge-container {
+    .score-info {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
     }
-    .score-gauge {
-      position: relative;
-      width: 200px; height: 200px;
-    }
-    .score-gauge svg {
-      transform: rotate(-90deg);
-    }
-    .score-value {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-    }
-    .score-number { font-size: 48px; font-weight: bold; }
-    .score-label { font-size: 14px; color: #6b7280; }
     
     .grade-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 20px;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 100px;
       font-size: 14px;
-      font-weight: 500;
-      margin-bottom: 12px;
+      font-weight: 600;
+      width: fit-content;
     }
     
-    /* Stats Grid */
+    .score-display {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    
+    .score-number { 
+      font-size: 56px; 
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    
+    .score-total {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-gray-400);
+    }
+    
+    .score-meta {
+      color: var(--color-gray-600);
+      font-size: 14px;
+    }
+    
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-top: 20px;
+      gap: 16px;
+      margin-top: 8px;
     }
+    
     .stat-card {
-      background: #f9fafb;
-      padding: 16px;
-      border-radius: 8px;
+      background: var(--color-gray-50);
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      text-align: center;
+      border: 1px solid var(--color-gray-200);
+    }
+    
+    .stat-value { 
+      font-size: 28px; 
+      font-weight: 700;
+      color: var(--color-gray-900);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    
+    .stat-label { 
+      font-size: 13px; 
+      color: var(--color-gray-600);
+      font-weight: 500;
+    }
+    
+    /* Score Gauge */
+    .score-gauge-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .score-gauge {
+      position: relative;
+      width: 220px; 
+      height: 220px;
+    }
+    
+    .score-gauge svg {
+      transform: rotate(-90deg);
+    }
+    
+    .score-gauge-bg {
+      fill: none;
+      stroke: var(--color-gray-200);
+      stroke-width: 12;
+    }
+    
+    .score-gauge-fill {
+      fill: none;
+      stroke-width: 12;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1.5s ease-out;
+    }
+    
+    .score-gauge-text {
+      position: absolute;
+      top: 50%; 
+      left: 50%;
+      transform: translate(-50%, -50%);
       text-align: center;
     }
-    .stat-value { font-size: 24px; font-weight: bold; }
-    .stat-label { font-size: 12px; color: #6b7280; }
+    
+    .score-gauge-value { 
+      font-size: 48px; 
+      font-weight: 800;
+      line-height: 1;
+    }
+    
+    .score-gauge-label { 
+      font-size: 14px; 
+      color: var(--color-gray-500);
+      font-weight: 500;
+    }
     
     /* Section Cards */
     .section {
       background: white;
-      border-radius: 12px;
-      padding: 24px;
+      border-radius: var(--radius-xl);
+      padding: 32px;
       margin-bottom: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .section-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 20px;
-      color: #111827;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--color-gray-200);
     }
     
-    /* Pillar Cards */
-    .pillars-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 16px;
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
     }
-    .pillar-card {
-      background: #f9fafb;
-      padding: 16px;
-      border-radius: 8px;
-      text-align: center;
-    }
-    .pillar-icon {
-      width: 40px; height: 40px;
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 8px;
+    
+    .section-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 20px;
     }
-    .pillar-name { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
-    .pillar-score { font-size: 24px; font-weight: bold; }
-    .progress-bar {
-      height: 6px;
-      background: #e5e7eb;
-      border-radius: 3px;
-      margin-top: 8px;
-      overflow: hidden;
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-gray-900);
+      flex: 1;
     }
+    
+    .section-score {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    
+    /* Pillar Cards Grid */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    
+    .pillar-card {
+      background: var(--color-gray-50);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 1px solid var(--color-gray-200);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .pillar-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .pillar-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .pillar-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    
+    .pillar-info {
+      flex: 1;
+    }
+    
+    .pillar-name { 
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-gray-700);
+    }
+    
+    .pillar-score { 
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    
+    .pillar-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background: var(--color-gray-200);
+      border-radius: 100px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    
     .progress-fill {
       height: 100%;
-      border-radius: 3px;
+      border-radius: 100px;
       transition: width 1s ease-out;
+    }
+    
+    .pillar-issues {
+      font-size: 13px;
+      color: var(--color-gray-600);
+    }
+    
+    /* Issue Check Cards */
+    .checks-grid {
+      display: grid;
+      gap: 12px;
+    }
+    
+    .check-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--color-gray-200);
+      transition: all 0.2s ease;
+    }
+    
+    .check-card:hover {
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .check-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    
+    .check-icon.pass {
+      background: var(--color-success-light);
+      color: var(--color-success);
+    }
+    
+    .check-icon.fail {
+      background: var(--color-error-light);
+      color: var(--color-error);
+    }
+    
+    .check-icon.warning {
+      background: var(--color-warning-light);
+      color: var(--color-warning);
+    }
+    
+    .check-content {
+      flex: 1;
+    }
+    
+    .check-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-gray-900);
+      margin-bottom: 2px;
+    }
+    
+    .check-desc {
+      font-size: 13px;
+      color: var(--color-gray-600);
+    }
+    
+    .check-meta {
+      text-align: right;
+      font-size: 12px;
+      color: var(--color-gray-500);
+    }
+    
+    .check-meta span {
+      display: block;
+    }
+    
+    .check-count {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--color-gray-700);
+    }
+    
+    /* Severity Badge */
+    .severity-badge {
+      display: inline-flex;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .severity-critical { 
+      background: var(--color-error-light); 
+      color: #991b1b; 
+    }
+    
+    .severity-high { 
+      background: #ffedd5; 
+      color: #9a3412; 
+    }
+    
+    .severity-medium { 
+      background: var(--color-warning-light); 
+      color: #92400e; 
+    }
+    
+    .severity-low { 
+      background: var(--color-info-light); 
+      color: #1e40af; 
+    }
+    
+    /* Summary Cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .summary-card {
+      background: white;
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-gray-200);
+      text-align: center;
+    }
+    
+    .summary-value {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    
+    .summary-label {
+      font-size: 13px;
+      color: var(--color-gray-600);
+      font-weight: 500;
     }
     
     /* Charts */
     .charts-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 24px;
       margin-top: 24px;
     }
+    
     .chart-container {
-      background: #f9fafb;
-      border-radius: 8px;
-      padding: 16px;
-      height: 300px;
-      position: relative;
+      background: var(--color-gray-50);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      height: 320px;
+      border: 1px solid var(--color-gray-200);
     }
+    
     .chart-title {
       font-size: 14px;
       font-weight: 600;
-      margin-bottom: 12px;
-      color: #374151;
+      margin-bottom: 16px;
+      color: var(--color-gray-700);
     }
+    
     canvas {
       width: 100% !important;
-      height: calc(100% - 30px) !important;
-    }
-    
-    /* Issues Table */
-    .issues-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-    }
-    .issues-table th,
-    .issues-table td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    .issues-table th {
-      font-size: 12px;
-      font-weight: 600;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .severity-badge {
-      display: inline-flex;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-    .severity-critical { background: #fee2e2; color: #991b1b; }
-    .severity-high { background: #ffedd5; color: #9a3412; }
-    .severity-medium { background: #fef3c7; color: #92400e; }
-    .severity-low { background: #dbeafe; color: #1e40af; }
-    
-    /* Clickable Issue Rows */
-    .issue-row {
-      transition: background-color 0.2s;
-    }
-    .issue-row:hover {
-      background-color: #f9fafb;
+      height: calc(100% - 40px) !important;
     }
     
     /* Lighthouse Metrics */
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 16px;
-      margin-top: 16px;
     }
+    
     .metric-card {
-      background: #f9fafb;
-      padding: 20px;
-      border-radius: 8px;
+      background: var(--color-gray-50);
+      padding: 24px 16px;
+      border-radius: var(--radius-lg);
       text-align: center;
+      border: 1px solid var(--color-gray-200);
     }
+    
     .metric-value {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    
+    .metric-label { 
+      font-size: 13px; 
+      color: var(--color-gray-600);
+      font-weight: 600;
+    }
+    
+    .metric-sublabel { 
+      font-size: 11px; 
+      color: var(--color-gray-400);
+      margin-top: 4px;
+    }
+    
+    /* Color Utilities */
+    .text-green { color: var(--color-success); }
+    .text-yellow { color: var(--color-warning); }
+    .text-orange { color: #f97316; }
+    .text-red { color: var(--color-error); }
+    .text-blue { color: var(--color-info); }
+    .bg-green { background: var(--color-success); }
+    .bg-yellow { background: var(--color-warning); }
+    .bg-orange { background: #f97316; }
+    .bg-red { background: var(--color-error); }
+    .bg-blue { background: var(--color-info); }
+    
+    /* Freshness Section */
+    .freshness-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    
+    .freshness-card {
+      background: var(--color-gray-50);
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-gray-200);
+    }
+    
+    .freshness-type {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-gray-600);
+      margin-bottom: 8px;
+    }
+    
+    .freshness-score {
       font-size: 32px;
-      font-weight: bold;
+      font-weight: 800;
       margin-bottom: 4px;
     }
-    .metric-label { font-size: 14px; color: #6b7280; }
-    .metric-sublabel { font-size: 12px; color: #9ca3af; margin-top: 4px; }
     
-    /* Colors */
-    .text-green { color: #10b981; }
-    .text-yellow { color: #f59e0b; }
-    .text-orange { color: #f97316; }
-    .text-red { color: #ef4444; }
-    .bg-green { background: #10b981; }
-    .bg-yellow { background: #f59e0b; }
-    .bg-orange { background: #f97316; }
-    .bg-red { background: #ef4444; }
-    .bg-blue { background: #3b82f6; }
-    .bg-purple { background: #8b5cf6; }
-    .bg-pink { background: #ec4899; }
+    .freshness-detail {
+      font-size: 12px;
+      color: var(--color-gray-500);
+    }
+    
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--color-gray-500);
+      font-size: 14px;
+    }
+    
+    /* Button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--color-info);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
     
     /* Responsive */
     @media (max-width: 640px) {
-      .container { padding: 12px; }
-      .score-number { font-size: 36px; }
-      .pillars-grid { grid-template-columns: repeat(2, 1fr); }
+      .container { padding: 16px; }
+      .header { padding: 24px; }
+      .score-number { font-size: 40px; }
+      .section { padding: 24px; }
+      .pillars-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -283,89 +664,122 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
         <div class="logo">
           <div class="logo-icon">SEO</div>
           <div>
-            <h1 style="font-size: 20px; font-weight: 600;">SEO Audit Report</h1>
-            <p style="font-size: 14px; color: #6b7280;">${escapeHtml(report.url)}</p>
+            <h1 style="font-size: 22px; font-weight: 700; color: var(--color-gray-900);">SEO Audit Report</h1>
+            <p style="font-size: 14px; color: var(--color-gray-500);">${escapeHtml(report.url)}</p>
           </div>
         </div>
-        <button onclick="downloadReport()" style="
-          padding: 8px 16px;
-          background: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-        ">
-          Download Report
+        <button onclick="downloadReport()" class="btn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          ${isRTL ? 'دانلود گزارش' : 'Download Report'}
         </button>
       </div>
       
       <div class="score-section">
-        <div>
-          <div class="grade-badge" style="background: ${gradeColor}20; color: ${gradeColor};">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: ${gradeColor};"></span>
+        <div class="score-info">
+          <div class="grade-badge" style="background: ${gradeColor}15; color: ${gradeColor};">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
             ${grade} - ${getGradeLabel(overallScore)}
           </div>
-          <h2 style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">
-            Overall score: ${overallScore.toFixed(1)}/100
-          </h2>
-          <p style="color: #6b7280;">Audit completed in ${formatDuration(report.duration_ms || 0)}</p>
+          
+          <div class="score-display">
+            <span class="score-number" style="color: ${gradeColor};">${overallScore.toFixed(1)}</span>
+            <span class="score-total">/100</span>
+          </div>
+          
+          <p class="score-meta">${isRTL ? 'مدت زمان حسابرسی:' : 'Audit completed in'} ${formatDuration(report.duration_ms || 0)}</p>
           
           <div class="stats-grid">
             <div class="stat-card">
               <div class="stat-value">${report.coverage?.checked_pages || 0}</div>
-              <div class="stat-label">Pages Checked</div>
+              <div class="stat-label">${isRTL ? 'صفحات بررسی‌شده' : 'Pages Checked'}</div>
             </div>
             <div class="stat-card">
               <div class="stat-value">${report.coverage?.discovered_pages || 0}</div>
-              <div class="stat-label">Pages Discovered</div>
+              <div class="stat-label">${isRTL ? 'صفحات کشف‌شده' : 'Pages Discovered'}</div>
             </div>
           </div>
         </div>
         
         <div class="score-gauge-container">
           <div class="score-gauge">
-            <svg width="200" height="200" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" stroke-width="8"/>
-              <circle id="score-circle" cx="50" cy="50" r="45" fill="none" stroke="${gradeColor}" 
-                      stroke-width="8" stroke-linecap="round"
-                      stroke-dasharray="${Math.PI * 90}" 
-                      stroke-dashoffset="${Math.PI * 90}"
-                      style="transition: stroke-dashoffset 1s ease-out;"/>
+            <svg width="220" height="220" viewBox="0 0 100 100">
+              <circle class="score-gauge-bg" cx="50" cy="50" r="42"/>
+              <circle id="score-circle" class="score-gauge-fill" cx="50" cy="50" r="42" 
+                      stroke="${gradeColor}"
+                      stroke-dasharray="264" 
+                      stroke-dashoffset="264"/>
             </svg>
-            <div class="score-value">
-              <div class="score-number">${overallScore.toFixed(1)}</div>
-              <div class="score-label">/100</div>
+            <div class="score-gauge-text">
+              <div class="score-gauge-value" style="color: ${gradeColor};">${overallScore.toFixed(0)}</div>
+              <div class="score-gauge-label">${isRTL ? 'از ۱۰۰' : 'of 100'}</div>
             </div>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- Pillar Scores -->
-    <div class="section">
-      <h2 class="section-title">Pillar Scores</h2>
-      <div class="pillars-grid">
-        ${generatePillarCards(pillars, lang)}
+    <!-- Issues Summary -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-value" style="color: ${critical.length > 0 ? '#ef4444' : '#10b981'};">${critical.length}</div>
+        <div class="summary-label">${isRTL ? 'بحرانی' : 'Critical'}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-value" style="color: ${high.length > 0 ? '#f97316' : '#10b981'};">${high.length}</div>
+        <div class="summary-label">${isRTL ? 'بالا' : 'High'}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-value" style="color: ${medium.length > 0 ? '#f59e0b' : '#10b981'};">${medium.length}</div>
+        <div class="summary-label">${isRTL ? 'متوسط' : 'Medium'}</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-value" style="color: ${low.length > 0 ? '#3b82f6' : '#10b981'};">${low.length}</div>
+        <div class="summary-label">${isRTL ? 'پایین' : 'Low'}</div>
       </div>
     </div>
     
-    ${generateChartsSection(pillars, critical, high, medium, low, lighthouse, lang)}
+    <!-- Pillar Scores with Visual Checks -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white;">📊</div>
+        <div class="section-title">${isRTL ? 'امتیازات محوری' : 'Pillar Scores'}</div>
+      </div>
+      
+      <div class="pillars-grid">
+        ${generateModernPillarCards(pillars, issuesByPillar, lang)}
+      </div>
+    </div>
     
-    ${generateScoringMethodologySection(report.scores?.breakdown?.scoring_methodology, lang)}
+    <!-- Detailed Checks by Pillar -->
+    ${generateDetailedChecksSection(pillars, issuesByPillar, breakdown, lang)}
     
-    ${generateIssuesSection(findings, lang)}
+    <!-- Charts -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">📈</div>
+        <div class="section-title">${isRTL ? 'تحلیل و نمودارها' : 'Analysis & Charts'}</div>
+      </div>
+      
+      <div class="charts-grid">
+        <div class="chart-container">
+          <div class="chart-title">${isRTL ? 'امتیازات محوری' : 'Pillar Scores'}</div>
+          <canvas id="pillarsCanvas"></canvas>
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">${isRTL ? 'توزیع مشکلات' : 'Issues Distribution'}</div>
+          <canvas id="issuesCanvas"></canvas>
+        </div>
+      </div>
+    </div>
     
-    ${generateIssueThresholdsSection(lang)}
+    ${hasLighthouse ? generateModernLighthouseSection(lighthouse, lang) : ''}
     
-    ${hasLighthouse ? generateLighthouseSection(lighthouse, lang) : ''}
+    ${freshnessData && freshnessData.by_type ? generateModernFreshnessSection(freshnessData, lang) : ''}
     
-    ${freshnessData ? generateFreshnessSection(freshnessData, lang) : ''}
-    
-    <footer style="text-align: center; padding: 40px 0; color: #9ca3af; font-size: 14px;">
-      <p>Generated by SEO Audit Bot</p>
-      <p style="font-size: 12px; margin-top: 4px;">${new Date(report.finished_at).toLocaleString()}</p>
-    </footer>
+    <div class="footer">
+      <p>${isRTL ? 'تولید شده توسط SEO Audit Bot' : 'Generated by SEO Audit Bot'}</p>
+      <p style="font-size: 12px; margin-top: 4px; color: var(--color-gray-400);">${new Date(report.finished_at).toLocaleString()}</p>
+    </div>
   </div>
   
   <script>
@@ -373,11 +787,11 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
     setTimeout(() => {
       const circle = document.getElementById('score-circle');
       if (circle) {
-        const circumference = Math.PI * 90;
+        const circumference = 2 * Math.PI * 42;
         const offset = circumference - (${overallScore} / 100) * circumference;
         circle.style.strokeDashoffset = offset;
       }
-    }, 100);
+    }, 200);
     
     // Download report
     function downloadReport() {
@@ -391,7 +805,7 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
       URL.revokeObjectURL(url);
     }
     
-    // Draw simple bar chart using Canvas API
+    // Canvas charts (same as before but modernized)
     function drawBarChart(canvasId, labels, data, colors) {
       const canvas = document.getElementById(canvasId);
       if (!canvas) return;
@@ -404,67 +818,63 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
       canvas.height = rect.height * dpr;
       ctx.scale(dpr, dpr);
       
-      const padding = 40;
+      const padding = 50;
       const chartWidth = rect.width - padding * 2;
       const chartHeight = rect.height - padding * 2;
-      const barWidth = chartWidth / data.length * 0.6;
+      const barWidth = chartWidth / data.length * 0.5;
       const spacing = chartWidth / data.length;
       const maxValue = 100;
       
-      // Clear canvas
       ctx.clearRect(0, 0, rect.width, rect.height);
       
-      // Draw bars
       data.forEach((value, i) => {
         const barHeight = (value / maxValue) * chartHeight;
         const x = padding + i * spacing + (spacing - barWidth) / 2;
         const y = rect.height - padding - barHeight;
         
-        // Draw bar
-        ctx.fillStyle = colors[i];
-        ctx.fillRect(x, y, barWidth, barHeight);
+        // Bar with gradient
+        const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+        gradient.addColorStop(0, colors[i]);
+        gradient.addColorStop(1, colors[i] + '80');
+        ctx.fillStyle = gradient;
         
-        // Draw value on top
+        ctx.beginPath();
+        ctx.roundRect(x, y, barWidth, barHeight, 6);
+        ctx.fill();
+        
+        // Value on top
         ctx.fillStyle = '#374151';
-        ctx.font = '12px sans-serif';
+        ctx.font = 'bold 13px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(value.toFixed(0), x + barWidth / 2, y - 5);
+        ctx.fillText(value.toFixed(0), x + barWidth / 2, y - 8);
         
-        // Draw label at bottom
+        // Label at bottom
         ctx.save();
-        ctx.translate(x + barWidth / 2, rect.height - padding + 15);
-        ctx.rotate(-Math.PI / 6);
+        ctx.translate(x + barWidth / 2, rect.height - padding + 20);
+        ctx.rotate(-Math.PI / 8);
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '11px Inter, sans-serif';
         ctx.fillText(labels[i], 0, 0);
         ctx.restore();
       });
       
-      // Draw Y axis
+      // Grid lines
       ctx.strokeStyle = '#e5e7eb';
-      ctx.beginPath();
-      ctx.moveTo(padding, padding);
-      ctx.lineTo(padding, rect.height - padding);
-      ctx.stroke();
-      
-      // Draw Y axis labels
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'right';
+      ctx.lineWidth = 1;
       for (let i = 0; i <= 5; i++) {
         const y = rect.height - padding - (i / 5) * chartHeight;
-        ctx.fillText((i * 20).toString(), padding - 5, y + 3);
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(rect.width - padding, y);
+        ctx.stroke();
         
-        // Grid line
-        if (i > 0) {
-          ctx.strokeStyle = '#f3f4f6';
-          ctx.beginPath();
-          ctx.moveTo(padding, y);
-          ctx.lineTo(rect.width - padding, y);
-          ctx.stroke();
-        }
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText((i * 20).toString(), padding - 8, y + 3);
       }
     }
     
-    // Draw doughnut chart
     function drawDoughnutChart(canvasId, labels, data, colors) {
       const canvas = document.getElementById(canvasId);
       if (!canvas) return;
@@ -478,17 +888,23 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
       ctx.scale(dpr, dpr);
       
       const centerX = rect.width / 2;
-      const centerY = rect.height / 2 - 20;
-      const radius = Math.min(centerX, centerY) - 20;
-      const innerRadius = radius * 0.6;
+      const centerY = rect.height / 2 - 10;
+      const radius = Math.min(centerX, centerY) - 30;
+      const innerRadius = radius * 0.55;
       
       const total = data.reduce((a, b) => a + b, 0);
       let currentAngle = -Math.PI / 2;
       
-      // Clear canvas
       ctx.clearRect(0, 0, rect.width, rect.height);
       
-      // Draw segments
+      if (total === 0) {
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('${isRTL ? 'مشکلی یافت نشد' : 'No issues found'}', centerX, centerY);
+        return;
+      }
+      
       data.forEach((value, i) => {
         if (value === 0) return;
         
@@ -504,39 +920,50 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
         currentAngle += sliceAngle;
       });
       
-      // Draw legend
-      let legendY = rect.height - 30;
-      const legendX = centerX - (labels.length * 60) / 2;
+      // Center text
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 28px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(total.toString(), centerX, centerY + 5);
+      
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '12px Inter, sans-serif';
+      ctx.fillText('${isRTL ? 'مشکل' : 'Issues'}', centerX, centerY + 22);
+      
+      // Legend at bottom
+      let legendY = rect.height - 25;
+      let legendX = 20;
+      const legendItemWidth = (rect.width - 40) / labels.length;
       
       labels.forEach((label, i) => {
         if (data[i] === 0) return;
         
-        const x = legendX + i * 60;
+        const x = legendX + i * legendItemWidth;
         
         ctx.fillStyle = colors[i];
-        ctx.fillRect(x, legendY, 10, 10);
+        ctx.beginPath();
+        ctx.arc(x + 6, legendY + 6, 5, 0, Math.PI * 2);
+        ctx.fill();
         
         ctx.fillStyle = '#374151';
-        ctx.font = '11px sans-serif';
+        ctx.font = '11px Inter, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(label, x + 14, legendY + 9);
+        ctx.fillText(label + ' (' + data[i] + ')', x + 16, legendY + 10);
       });
     }
     
-    // Initialize charts when page loads
+    // Initialize charts
     window.addEventListener('load', () => {
-      // Pillar scores bar chart
       drawBarChart('pillarsCanvas', 
         ${JSON.stringify(getPillarLabels(lang))},
         [${pillars.indexability || 0}, ${pillars.crawlability || 0}, ${pillars.onpage || 0}, ${pillars.technical || 0}, ${pillars.freshness || 0}, ${pillars.performance || 0}],
         ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9']
       );
       
-      // Issues distribution doughnut chart
       drawDoughnutChart('issuesCanvas',
-        ${JSON.stringify([lang === 'fa' ? 'بحرانی' : 'Critical', lang === 'fa' ? 'بالا' : 'High', lang === 'fa' ? 'متوسط' : 'Medium', lang === 'fa' ? 'پایین' : 'Low'])},
+        ${JSON.stringify([isRTL ? 'بحرانی' : 'Critical', isRTL ? 'بالا' : 'High', isRTL ? 'متوسط' : 'Medium', isRTL ? 'پایین' : 'Low'])},
         [${critical.length}, ${high.length}, ${medium.length}, ${low.length}],
-        ['#ef4444', '#f97316', '#eab308', '#22c55e']
+        ['#ef4444', '#f97316', '#f59e0b', '#3b82f6']
       );
     });
     
@@ -551,9 +978,9 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
           ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9']
         );
         drawDoughnutChart('issuesCanvas',
-          ${JSON.stringify([lang === 'fa' ? 'بحرانی' : 'Critical', lang === 'fa' ? 'بالا' : 'High', lang === 'fa' ? 'متوسط' : 'Medium', lang === 'fa' ? 'پایین' : 'Low'])},
+          ${JSON.stringify([isRTL ? 'بحرانی' : 'Critical', isRTL ? 'بالا' : 'High', isRTL ? 'متوسط' : 'Medium', isRTL ? 'پایین' : 'Low'])},
           [${critical.length}, ${high.length}, ${medium.length}, ${low.length}],
-          ['#ef4444', '#f97316', '#eab308', '#22c55e']
+          ['#ef4444', '#f97316', '#f59e0b', '#3b82f6']
         );
       }, 250);
     });
@@ -562,8 +989,7 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
 </html>`;
 }
 
-// Helper functions
-// Unified grade scale: A(90+), B(80+), C(70+), D(60+), F(<60)
+// Modern helper functions
 function getGrade(score: number): string {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
@@ -581,14 +1007,6 @@ function getGradeLabel(score: number): string {
 }
 
 function getGradeColor(score: number): string {
-  if (score >= 90) return '#10b981'; // Green
-  if (score >= 80) return '#3b82f6'; // Blue
-  if (score >= 70) return '#f59e0b'; // Orange
-  if (score >= 60) return '#f97316'; // Dark Orange
-  return '#ef4444'; // Red
-}
-
-function getScoreColor(score: number): string {
   if (score >= 90) return '#10b981';
   if (score >= 80) return '#3b82f6';
   if (score >= 70) return '#f59e0b';
@@ -596,11 +1014,21 @@ function getScoreColor(score: number): string {
   return '#ef4444';
 }
 
+function getScoreStatus(score: number): 'pass' | 'warning' | 'fail' {
+  if (score >= 80) return 'pass';
+  if (score >= 60) return 'warning';
+  return 'fail';
+}
+
 function getPillarLabels(lang: 'en' | 'fa'): string[] {
   if (lang === 'fa') {
     return ['ایندکس‌پذیری', 'خزش‌پذیری', 'محتوایی', 'فنی', 'تازگی', 'عملکرد'];
   }
   return ['Indexability', 'Crawlability', 'On-Page', 'Technical', 'Freshness', 'Performance'];
+}
+
+function getPillarIcons(): string[] {
+  return ['🔍', '🕷️', '📝', '⚙️', '🕐', '⚡'];
 }
 
 function formatDuration(ms: number): string {
@@ -621,196 +1049,167 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
-function generatePillarCards(pillars: any, lang: 'en' | 'fa'): string {
+function generateModernPillarCards(pillars: any, issuesByPillar: any, lang: 'en' | 'fa'): string {
   const labels = getPillarLabels(lang);
+  const icons = getPillarIcons();
   const keys = ['indexability', 'crawlability', 'onpage', 'technical', 'freshness', 'performance'];
-  const icons = ['🔍', '🕷️', '📝', '⚙️', '🕐', '⚡'];
-  
-  return keys.map((key, i) => {
-    const score = pillars[key] || 0;
-    const color = getScoreColor(score);
-    return `
-    <div class="pillar-card">
-      <div class="pillar-icon" style="background: ${color}20; color: ${color};">
-        ${icons[i]}
-      </div>
-      <div class="pillar-name">${labels[i]}</div>
-      <div class="pillar-score" style="color: ${color};">${score.toFixed(1)}</div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: ${score}%; background: ${color};"></div>
-      </div>
-    </div>
-    `;
-  }).join('');
-}
-
-function generateChartsSection(pillars: any, critical: any[], high: any[], medium: any[], low: any[], lighthouse: any, lang: 'en' | 'fa'): string {
-  return `
-  <div class="section">
-    <h2 class="section-title">${lang === 'fa' ? 'نمودارها' : 'Charts'}</h2>
-    <div class="charts-grid">
-      <div class="chart-container">
-        <div class="chart-title">${lang === 'fa' ? 'امتیازات محوری' : 'Pillar Scores'}</div>
-        <canvas id="pillarsCanvas"></canvas>
-      </div>
-      <div class="chart-container">
-        <div class="chart-title">${lang === 'fa' ? 'توزیع مشکلات' : 'Issues Distribution'}</div>
-        <canvas id="issuesCanvas"></canvas>
-      </div>
-    </div>
-  </div>
-  `;
-}
-
-function generateIssuesSection(findings: any[], lang: 'en' | 'fa'): string {
-  if (findings.length === 0) return '';
+  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9'];
   
   const isRTL = lang === 'fa';
   
-  const rows = findings.map((finding, index) => {
-    const prevalence = finding.prevalence || (finding.checked_pages ? finding.affected_pages / finding.checked_pages : 0);
-    const prevalencePct = (prevalence * 100).toFixed(1);
-    const hasExamples = finding.example_urls && finding.example_urls.length > 0;
-    const exampleCount = finding.example_urls?.length || 0;
+  return keys.map((key, i) => {
+    const score = pillars[key] || 0;
+    const color = colors[i];
+    const status = getScoreStatus(score);
+    const issues = issuesByPillar[key] || [];
+    const issueCount = issues.length;
     
-    // Create expandable page list HTML
-    let pageListHtml = '';
-    if (hasExamples) {
-      const displayUrls = finding.example_urls.slice(0, 10);
-      const remainingCount = exampleCount - 10;
-      
-      pageListHtml = `
-        <div id="pages-${finding.id}" style="display: none; margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 6px;">
-          <div style="font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">
-            ${isRTL ? `صفحات دارای این مشکل (${exampleCount} مورد):` : `Pages with this issue (${exampleCount} total):`}
-          </div>
-          <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #374151; line-height: 1.8;">
-            ${displayUrls.map((url: string) => `<li><a href="${escapeHtml(url)}" target="_blank" style="color: #3b82f6; text-decoration: none;">${escapeHtml(url)}</a></li>`).join('')}
-          </ul>
-          ${remainingCount > 0 ? `
-            <div style="margin-top: 8px; font-size: 11px; color: #9ca3af; font-style: italic;">
-              ${isRTL ? `و ${remainingCount} مورد دیگر...` : `And ${remainingCount} more...`}
-            </div>
-          ` : ''}
-        </div>
-      `;
+    let statusText = isRTL ? 'عالی' : 'Excellent';
+    let statusIcon = '✓';
+    if (status === 'warning') {
+      statusText = isRTL ? 'نیاز به بهبود' : 'Needs Improvement';
+      statusIcon = '!';
+    } else if (status === 'fail') {
+      statusText = isRTL ? 'نیاز به توجه' : 'Needs Attention';
+      statusIcon = '✕';
     }
     
     return `
-    <tr style="cursor: ${hasExamples ? 'pointer' : 'default'};" onclick="${hasExamples ? `togglePages('${finding.id}')` : ''}" class="issue-row">
-      <td><span class="severity-badge severity-${finding.severity}">${finding.severity}</span></td>
-      <td><strong>${finding.id}</strong></td>
-      <td>
-        <div>${escapeHtml(finding.title || finding.id)}</div>
-        ${finding.description ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${escapeHtml(finding.description)}</div>` : ''}
-        ${finding.weight ? `<div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">Weight: ${finding.weight} | Penalty: ${finding.penalty?.toFixed(2) || 'N/A'}</div>` : ''}
-      </td>
-      <td>
-        ${finding.affected_pages}
-        ${hasExamples ? `<div style="font-size: 11px; color: #3b82f6;">${isRTL ? '(برای مشاهده کلیک کنید)' : '(click to view)'}</div>` : ''}
-      </td>
-      <td>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div style="flex: 1; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
-            <div style="width: ${prevalencePct}%; height: 100%; background: #3b82f6; border-radius: 3px;"></div>
-          </div>
-          <span style="font-size: 12px; color: #6b7280; min-width: 45px;">${prevalencePct}%</span>
+    <div class="pillar-card">
+      <div class="pillar-header">
+        <div class="pillar-icon" style="background: ${color}20; color: ${color};">
+          ${icons[i]}
         </div>
-        ${pageListHtml}
-      </td>
-    </tr>
+        <div class="pillar-info">
+          <div class="pillar-name">${labels[i]}</div>
+          <div class="pillar-score" style="color: ${color};">${score.toFixed(1)}</div>
+          <div class="pillar-status" style="color: ${status === 'pass' ? '#10b981' : status === 'warning' ? '#f59e0b' : '#ef4444'};">
+            <span style="font-weight: 700;">${statusIcon}</span> ${statusText}
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${score}%; background: ${color};"></div>
+      </div>
+      <div class="pillar-issues">
+        ${issueCount > 0 
+          ? (isRTL ? `${issueCount} مشکل یافت شد` : `${issueCount} issues found`) 
+          : (isRTL ? 'هیچ مشکلی یافت نشد ✓' : 'No issues found ✓')}
+      </div>
+    </div>
     `;
   }).join('');
-  
-  return `
-  <div class="section">
-    <h2 class="section-title">${isRTL ? 'مشکلات یافت شده' : 'Detected Issues'}</h2>
-    <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">
-      ${isRTL 
-        ? 'برای مشاهده صفحات دارای هر مشکل، روی ردیف آن کلیک کنید. هر مشکل دارای وزن و جریمه مشخص است.'
-        : 'Click on any issue row to see affected pages. Each issue has a specific weight and penalty impact.'}
-    </p>
-    <table class="issues-table">
-      <thead>
-        <tr>
-          <th>${isRTL ? 'شدت' : 'Severity'}</th>
-          <th>${isRTL ? 'کد' : 'Code'}</th>
-          <th>${isRTL ? 'مشکل / توضیحات' : 'Issue / Description'}</th>
-          <th>${isRTL ? 'صفحات' : 'Pages'}</th>
-          <th>${isRTL ? 'نسبت' : 'Ratio'}</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows}
-      </tbody>
-    </table>
-    
-    <script>
-      function togglePages(issueId) {
-        const pagesDiv = document.getElementById('pages-' + issueId);
-        if (pagesDiv) {
-          const isVisible = pagesDiv.style.display !== 'none';
-          pagesDiv.style.display = isVisible ? 'none' : 'block';
-        }
-      }
-    </script>
-  </div>
-  `;
 }
 
-function generateLighthouseSection(lighthouse: any, lang: 'en' | 'fa'): string {
+function generateDetailedChecksSection(pillars: any, issuesByPillar: any, breakdown: any, lang: 'en' | 'fa'): string {
+  const isRTL = lang === 'fa';
+  const keys = ['indexability', 'crawlability', 'onpage', 'technical', 'freshness', 'performance'];
+  const labels = getPillarLabels(lang);
+  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9'];
+  
+  let html = '';
+  
+  keys.forEach((key, i) => {
+    const issues = issuesByPillar[key] || [];
+    if (issues.length === 0) return;
+    
+    const color = colors[i];
+    
+    html += `
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: ${color}20; color: ${color};">
+          ${i === 0 ? '🔍' : i === 1 ? '🕷️' : i === 2 ? '📝' : i === 3 ? '⚙️' : i === 4 ? '🕐' : '⚡'}
+        </div>
+        <div class="section-title">${labels[i]} ${isRTL ? '- بررسی جزئی' : '- Detailed Checks'}</div>
+        <div class="section-score" style="color: ${color};">${pillars[key]?.toFixed(1) || 0}</div>
+      </div>
+      
+      <div class="checks-grid">
+        ${issues.map((issue: any) => {
+          const severityClass = issue.severity === 'critical' || issue.severity === 'high' ? 'fail' : issue.severity === 'medium' ? 'warning' : 'warning';
+          const icon = severityClass === 'fail' ? '✕' : '!';
+          
+          return `
+          <div class="check-card">
+            <div class="check-icon ${severityClass}">${icon}</div>
+            <div class="check-content">
+              <div class="check-title">${issue.id} - ${escapeHtml(issue.title || issue.id)}</div>
+              <div class="check-desc">${escapeHtml(issue.description || '')}</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-${issue.severity}">${issue.severity}</span>
+              <span class="check-count">${issue.affected_pages} ${isRTL ? 'صفحه' : 'pages'}</span>
+            </div>
+          </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+    `;
+  });
+  
+  return html;
+}
+
+function generateModernLighthouseSection(lighthouse: any, lang: 'en' | 'fa'): string {
+  const isRTL = lang === 'fa';
   const lcp = lighthouse?.lcp;
   const cls = lighthouse?.cls;
   const tbt = lighthouse?.tbt;
   const perf = lighthouse?.performance;
   
-  const getColor = (value: number | null, type: string) => {
-    if (value === null) return 'text-gray';
+  const getMetricStatus = (value: number | null, type: string): { color: string; status: string } => {
+    if (value === null) return { color: '#9ca3af', status: 'N/A' };
     if (type === 'lcp') {
-      if (value <= 2500) return 'text-green';
-      if (value <= 4000) return 'text-yellow';
-      return 'text-red';
+      if (value <= 2500) return { color: '#10b981', status: 'good' };
+      if (value <= 4000) return { color: '#f59e0b', status: 'needs-improvement' };
+      return { color: '#ef4444', status: 'poor' };
     }
     if (type === 'cls') {
-      if (value <= 0.1) return 'text-green';
-      if (value <= 0.25) return 'text-yellow';
-      return 'text-red';
+      if (value <= 0.1) return { color: '#10b981', status: 'good' };
+      if (value <= 0.25) return { color: '#f59e0b', status: 'needs-improvement' };
+      return { color: '#ef4444', status: 'poor' };
     }
     if (type === 'tbt') {
-      if (value <= 200) return 'text-green';
-      if (value <= 600) return 'text-yellow';
-      return 'text-red';
+      if (value <= 200) return { color: '#10b981', status: 'good' };
+      if (value <= 600) return { color: '#f59e0b', status: 'needs-improvement' };
+      return { color: '#ef4444', status: 'poor' };
     }
     if (type === 'perf') {
-      if (value >= 90) return 'text-green';
-      if (value >= 70) return 'text-yellow';
-      return 'text-red';
+      if (value >= 90) return { color: '#10b981', status: 'good' };
+      if (value >= 70) return { color: '#f59e0b', status: 'needs-improvement' };
+      return { color: '#ef4444', status: 'poor' };
     }
-    return 'text-gray';
+    return { color: '#9ca3af', status: 'unknown' };
   };
   
   return `
   <div class="section">
-    <h2 class="section-title">Core Web Vitals</h2>
+    <div class="section-header">
+      <div class="section-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">⚡</div>
+      <div class="section-title">Core Web Vitals</div>
+    </div>
+    
     <div class="metrics-grid">
       <div class="metric-card">
-        <div class="metric-value ${getColor(lcp, 'lcp')}">${lcp ? (lcp / 1000).toFixed(2) + 's' : 'N/A'}</div>
+        <div class="metric-value" style="color: ${getMetricStatus(lcp, 'lcp').color};">${lcp ? (lcp / 1000).toFixed(2) + 's' : 'N/A'}</div>
         <div class="metric-label">LCP</div>
-        <div class="metric-sublabel">Largest Contentful Paint</div>
+        <div class="metric-sublabel">${isRTL ? 'بزرگ‌ترین رنگ محتوا' : 'Largest Contentful Paint'}</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value ${getColor(cls, 'cls')}">${cls ? cls.toFixed(3) : 'N/A'}</div>
+        <div class="metric-value" style="color: ${getMetricStatus(cls, 'cls').color};">${cls ? cls.toFixed(3) : 'N/A'}</div>
         <div class="metric-label">CLS</div>
-        <div class="metric-sublabel">Cumulative Layout Shift</div>
+        <div class="metric-sublabel">${isRTL ? 'تغییر چیدمان تجمعی' : 'Cumulative Layout Shift'}</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value ${getColor(tbt, 'tbt')}">${tbt ? tbt + 'ms' : 'N/A'}</div>
+        <div class="metric-value" style="color: ${getMetricStatus(tbt, 'tbt').color};">${tbt ? tbt + 'ms' : 'N/A'}</div>
         <div class="metric-label">TBT</div>
-        <div class="metric-sublabel">Total Blocking Time</div>
+        <div class="metric-sublabel">${isRTL ? 'زمان مسدودسازی کل' : 'Total Blocking Time'}</div>
       </div>
       <div class="metric-card">
-        <div class="metric-value ${getColor(perf, 'perf')}">${perf || 'N/A'}</div>
-        <div class="metric-label">Performance</div>
+        <div class="metric-value" style="color: ${getMetricStatus(perf, 'perf').color};">${perf || 'N/A'}</div>
+        <div class="metric-label">${isRTL ? 'عملکرد' : 'Performance'}</div>
         <div class="metric-sublabel">Lighthouse Score</div>
       </div>
     </div>
@@ -818,176 +1217,52 @@ function generateLighthouseSection(lighthouse: any, lang: 'en' | 'fa'): string {
   `;
 }
 
-function generateFreshnessSection(freshness: any, lang: 'en' | 'fa'): string {
+function generateModernFreshnessSection(freshness: any, lang: 'en' | 'fa'): string {
+  const isRTL = lang === 'fa';
   const score = freshness.score || 0;
-  const color = getScoreColor(score);
+  const color = getGradeColor(score);
+  const byType = freshness.by_type || {};
   
-  return `
-  <div class="section">
-    <h2 class="section-title">${lang === 'fa' ? 'تازگی محتوا' : 'Content Freshness'}</h2>
-    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
-      <div style="font-size: 48px; font-weight: bold; color: ${color};">${score}</div>
-      <div>
-        <div style="font-size: 14px; color: #6b7280;">${lang === 'fa' ? 'از 100' : 'out of 100'}</div>
-        <div style="margin-top: 8px; width: 200px; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
-          <div style="width: ${score}%; height: 100%; background: ${color}; border-radius: 4px; transition: width 1s ease-out;"></div>
-        </div>
-      </div>
-    </div>
-    <p style="color: #6b7280; margin-bottom: 16px;">
-      ${lang === 'fa' ? 'محتوای قدیمی:' : 'Stale content:'} <strong style="color: ${color};">${freshness.stale_count || 0}</strong>
-    </p>
-  </div>
-  `;
-}
-
-function generateScoringMethodologySection(methodology: any, lang: 'en' | 'fa'): string {
-  if (!methodology) return '';
-  
-  const isRTL = lang === 'fa';
-  
-  return `
-  <div class="section">
-    <h2 class="section-title">${isRTL ? 'نحوه محاسبه امتیازات' : 'How Scores Are Calculated'}</h2>
+  let typeCards = '';
+  Object.entries(byType).forEach(([type, data]: [string, any]) => {
+    const typeColor = getGradeColor(data.score);
+    const typeLabel = isRTL 
+      ? (type === 'post' ? 'پست‌ها' : type === 'product' ? 'محصولات' : type === 'page' ? 'صفحات' : type)
+      : (type === 'post' ? 'Blog Posts' : type === 'product' ? 'Products' : type === 'page' ? 'Pages' : type);
     
-    <div style="margin-bottom: 24px;">
-      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #374151;">
-        ${isRTL ? 'مقیاس نمره‌دهی' : 'Grade Scale'}
-      </h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
-        <div style="background: #dcfce7; padding: 8px 12px; border-radius: 6px; text-align: center;">
-          <div style="font-weight: 600; color: #166534;">A (90-100)</div>
-          <div style="font-size: 12px; color: #15803d;">${isRTL ? 'عالی' : 'Excellent'}</div>
-        </div>
-        <div style="background: #dbeafe; padding: 8px 12px; border-radius: 6px; text-align: center;">
-          <div style="font-weight: 600; color: #1e40af;">B (80-89)</div>
-          <div style="font-size: 12px; color: #1d4ed8;">${isRTL ? 'خوب' : 'Good'}</div>
-        </div>
-        <div style="background: #fef3c7; padding: 8px 12px; border-radius: 6px; text-align: center;">
-          <div style="font-weight: 600; color: #92400e;">C (70-79)</div>
-          <div style="font-size: 12px; color: #b45309;">${isRTL ? 'متوسط' : 'Fair'}</div>
-        </div>
-        <div style="background: #ffedd5; padding: 8px 12px; border-radius: 6px; text-align: center;">
-          <div style="font-weight: 600; color: #9a3412;">D (60-69)</div>
-          <div style="font-size: 12px; color: #c2410c;">${isRTL ? 'نیاز به بهبود' : 'Needs Work'}</div>
-        </div>
-        <div style="background: #fee2e2; padding: 8px 12px; border-radius: 6px; text-align: center;">
-          <div style="font-weight: 600; color: #991b1b;">F (0-59)</div>
-          <div style="font-size: 12px; color: #dc2626;">${isRTL ? 'ضعیف' : 'Poor'}</div>
-        </div>
-      </div>
-    </div>
-    
-    <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #374151;">
-        ${isRTL ? 'فرمول‌های محاسبه' : 'Calculation Formulas'}
-      </h3>
-      
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: 500; color: #6b7280; margin-bottom: 4px;">
-          ${isRTL ? 'امتیاز کلی:' : 'Overall Score:'}
-        </div>
-        <div style="background: white; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #374151;">
-          ${isRTL ? 'میانگین وزنی ۶ محور اصلی' : 'Weighted average of 6 pillar scores'}
-        </div>
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: 500; color: #6b7280; margin-bottom: 4px;">
-          ${isRTL ? 'محورهای محتوا/فنی/خزش/ایندکس:' : 'Content/Technical/Crawl/Index Pillars:'}
-        </div>
-        <div style="background: white; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #374151;">
-          Score = 100 - Σ(issue penalties)
-        </div>
-      </div>
-      
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: 500; color: #6b7280; margin-bottom: 4px;">
-          ${isRTL ? 'محور تازگی:' : 'Freshness Pillar:'}
-        </div>
-        <div style="background: white; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #374151;">
-          ${escapeHtml(methodology.freshness_formula || (isRTL ? 'بر اساس توزیع سن محتوا' : 'Based on content age distribution'))}
-        </div>
-      </div>
-      
-      <div>
-        <div style="font-weight: 500; color: #6b7280; margin-bottom: 4px;">
-          ${isRTL ? 'محور عملکرد:' : 'Performance Pillar:'}
-        </div>
-        <div style="background: white; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #374151;">
-          ${escapeHtml(methodology.performance_formula || (isRTL ? 'ترکیبی از Lighthouse و جریمه‌ها' : 'Hybrid: Lighthouse + penalties'))}
-        </div>
-      </div>
-    </div>
-    
-    <div style="background: #eff6ff; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-      <div style="font-size: 13px; color: #1e40af;">
-        <strong>${isRTL ? 'نکته:' : 'Note:'}</strong> 
+    typeCards += `
+    <div class="freshness-card">
+      <div class="freshness-type">${typeLabel}</div>
+      <div class="freshness-score" style="color: ${typeColor};">${data.score}%</div>
+      <div class="freshness-detail">
         ${isRTL 
-          ? 'هر محور بر اساس وزن خاص خود در امتیاز کلی تأثیر می‌گذارد. مشکلات بحرانی بیشترین تأثیر منفی را دارند.'
-          : 'Each pillar contributes to the overall score based on its specific weight. Critical issues have the highest negative impact.'}
+          ? `${data.fresh} تازه / ${data.stale} قدیمی (${data.threshold} ماه)`
+          : `${data.fresh} fresh / ${data.stale} stale (${data.threshold}mo threshold)`}
       </div>
     </div>
-  </div>
-  `;
-}
-
-function generateIssueThresholdsSection(lang: 'en' | 'fa'): string {
-  const isRTL = lang === 'fa';
-  
-  const thresholds = [
-    { id: 'E01', name: isRTL ? 'noindex' : 'noindex', threshold: isRTL ? 'وجود تگ noindex' : 'noindex tag present', severity: 'critical' },
-    { id: 'E02', name: isRTL ? 'خطای 4xx' : '4xx Error', threshold: isRTL ? 'کد وضعیت 400-499' : 'Status code 400-499', severity: 'critical' },
-    { id: 'E04', name: isRTL ? 'زنجیره ریدایرکت' : 'Redirect Chain', threshold: isRTL ? '>1 ریدایرکت' : '>1 redirect', severity: 'medium' },
-    { id: 'E06', name: isRTL ? 'عدم تطابق canonical' : 'Canonical Mismatch', threshold: isRTL ? 'URL نهایی ≠ canonical' : 'Final URL ≠ canonical', severity: 'high' },
-    { id: 'F01', name: isRTL ? 'عنوان خیلی کوتاه' : 'Title Too Short', threshold: isRTL ? '<10 کاراکتر' : '<10 chars', severity: 'high' },
-    { id: 'F04', name: isRTL ? 'توضیحات متا خیلی کوتاه' : 'Meta Description Short', threshold: isRTL ? '<50 کاراکتر' : '<50 chars', severity: 'high' },
-    { id: 'F07', name: isRTL ? 'فاقد H1' : 'Missing H1', threshold: isRTL ? '0 تگ H1' : '0 H1 tags', severity: 'medium' },
-    { id: 'F08', name: isRTL ? 'چندین H1' : 'Multiple H1s', threshold: isRTL ? '>1 تگ H1' : '>1 H1 tags', severity: 'medium' },
-    { id: 'G01', name: isRTL ? 'تصاویر بدون alt' : 'Images Missing Alt', threshold: isRTL ? '>0 تصویر بدون alt' : '>0 images without alt', severity: 'low' },
-    { id: 'M01', name: isRTL ? 'فاقد viewport' : 'Missing Viewport', threshold: isRTL ? 'فاقد متا viewport' : 'No viewport meta', severity: 'high' },
-    { id: 'C03', name: isRTL ? 'محتوای نازک' : 'Thin Content', threshold: isRTL ? '<300 کلمه' : '<300 words', severity: 'medium' },
-    { id: 'S01', name: isRTL ? 'عدم استفاده HTTPS' : 'Not Using HTTPS', threshold: isRTL ? 'URL با HTTP' : 'HTTP URL', severity: 'critical' },
-    { id: 'S02', name: isRTL ? 'محتوای ترکیبی' : 'Mixed Content', threshold: isRTL ? 'منابع HTTP روی HTTPS' : 'HTTP resources on HTTPS', severity: 'high' },
-    { id: 'P01', name: isRTL ? 'پاسخ کند سرور' : 'Slow Server Response', threshold: isRTL ? 'TTFB >800ms' : 'TTFB >800ms', severity: 'medium' },
-    { id: 'L01', name: isRTL ? 'امتیاز عملکرد ضعیف' : 'Poor Performance', threshold: isRTL ? 'امتیاز Lighthouse <50' : 'Lighthouse score <50', severity: 'critical' },
-    { id: 'L02', name: isRTL ? 'LCP کند' : 'Slow LCP', threshold: isRTL ? 'LCP >2.5s' : 'LCP >2.5s', severity: 'high' },
-    { id: 'L03', name: isRTL ? 'CLS ضعیف' : 'Poor CLS', threshold: isRTL ? 'CLS >0.1' : 'CLS >0.1', severity: 'high' },
-    { id: 'L04', name: isRTL ? 'TBT بالا' : 'High TBT', threshold: isRTL ? 'TBT >200ms' : 'TBT >200ms', severity: 'medium' },
-    { id: 'L05', name: isRTL ? 'صفحه یتیم' : 'Orphan Page', threshold: isRTL ? '0 لینک ورودی' : '0 inbound links', severity: 'high' },
-    { id: 'L06', name: isRTL ? 'صفحه عمیق' : 'Deep Page', threshold: isRTL ? '>3 سطح از صفحه اصلی' : '>3 levels from homepage', severity: 'medium' },
-  ];
-  
-  const rows = thresholds.map(t => `
-    <tr>
-      <td><span class="severity-badge severity-${t.severity}">${t.severity}</span></td>
-      <td><strong>${t.id}</strong></td>
-      <td>${t.name}</td>
-      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">${t.threshold}</td>
-    </tr>
-  `).join('');
+    `;
+  });
   
   return `
   <div class="section">
-    <h2 class="section-title">${isRTL ? 'آستانه‌های تشخیص مشکلات' : 'Issue Detection Thresholds'}</h2>
-    <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">
-      ${isRTL 
-        ? 'صفحات زیر در صورت برآورده کردن این شرایط علامت‌گذاری می‌شوند:'
-        : 'Pages are flagged when they meet these conditions:'}
-    </p>
-    <table class="issues-table">
-      <thead>
-        <tr>
-          <th>${isRTL ? 'شدت' : 'Severity'}</th>
-          <th>${isRTL ? 'کد' : 'Code'}</th>
-          <th>${isRTL ? 'مشکل' : 'Issue'}</th>
-          <th>${isRTL ? 'آستانه' : 'Threshold'}</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows}
-      </tbody>
-    </table>
+    <div class="section-header">
+      <div class="section-icon" style="background: linear-gradient(135deg, #ec4899, #db2777); color: white;">🕐</div>
+      <div class="section-title">${isRTL ? 'تازگی محتوا' : 'Content Freshness'}</div>
+      <div class="section-score" style="color: ${color};">${score}%</div>
+    </div>
+    
+    <div class="freshness-grid">
+      ${typeCards}
+    </div>
+    
+    ${freshness.recommendations && freshness.recommendations.length > 0 ? `
+    <div style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+      <div style="font-weight: 600; color: #92400e; margin-bottom: 8px;">${isRTL ? 'توصیه‌ها:' : 'Recommendations:'}</div>
+      <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 14px;">
+        ${freshness.recommendations.map((rec: string) => `<li style="margin-bottom: 4px;">${rec}</li>`).join('')}
+      </ul>
+    </div>
+    ` : ''}
   </div>
   `;
 }

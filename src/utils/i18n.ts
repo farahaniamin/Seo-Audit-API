@@ -70,7 +70,33 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.L05.title': 'Orphan page (no inbound links)',
     'issue.L06.title': 'Deep page (>3 levels from homepage)',
     'issue.L05.desc': 'Pages with no internal links pointing to them are invisible to search engine crawlers. Add links from relevant pages to help discovery.',
-    'issue.L06.desc': 'Pages more than 3 clicks from homepage are hard for users and crawlers to find. Improve site architecture and internal linking.'
+    'issue.L06.desc': 'Pages more than 3 clicks from homepage are hard for users and crawlers to find. Improve site architecture and internal linking.',
+    
+    // New Indexability Issues
+    'issue.E07.title': 'robots.txt blocking pages',
+    'issue.E07.desc': 'robots.txt file is blocking important pages from being crawled. Review and update disallow rules to allow crawling of valuable content.',
+    'issue.E12.title': 'X-Robots-Tag blocking indexing',
+    'issue.E12.desc': 'Server is sending X-Robots-Tag header that blocks indexing. Check server configuration and remove unnecessary noindex headers.',
+    'issue.E14.title': 'Cross-domain canonical URL',
+    'issue.E14.desc': 'Canonical URL points to a different domain. This passes all SEO value to the external site. Ensure canonicals point to your own URLs.',
+    'issue.E18.title': 'Password protected pages',
+    'issue.E18.desc': 'Pages require authentication to access. Search engines cannot crawl password-protected content. Consider making important pages public.',
+    'issue.E19.title': 'Infinite redirect loop',
+    'issue.E19.desc': 'Pages are stuck in redirect loops. This prevents crawlers and users from accessing the content. Fix redirect configuration.',
+    
+    // Enhanced Freshness Issues
+    'issue.C01.title': 'Stale blog posts (>3 months)',
+    'issue.C01.desc': 'Blog posts haven\'t been updated in 3+ months. Fresh content performs better in search. Update old posts with new information.',
+    'issue.C02.title': 'Stale products (>6 months)',
+    'issue.C02.desc': 'Product pages haven\'t been updated in 6+ months. Keep product information current for better rankings and user experience.',
+    'issue.C04.title': 'Stale pages (>12 months)',
+    'issue.C04.desc': 'Static pages haven\'t been updated in 12+ months. Review and update important pages to maintain relevance.',
+    'issue.C05.title': 'Overall site freshness low',
+    'issue.C05.desc': 'Less than 50% of content is fresh. Google favors sites with regularly updated content. Establish a content update schedule.',
+    
+    // New Technical Issues
+    'issue.E13.title': 'Soft 404 error pages',
+    'issue.E13.desc': 'Pages return 200 status but display "not found" content. This confuses search engines. Return proper 404 status for missing pages.'
   },
   fa: {
     audit_complete: 'نتایج بررسی سئو',
@@ -141,7 +167,33 @@ const STR: Record<Lang, Record<string,string>> = {
     'issue.L05.title': 'صفحه یتیم (بدون لینک ورودی)',
     'issue.L06.title': 'صفحه عمیق (>3 سطح از صفحه اصلی)',
     'issue.L05.desc': 'صفحاتی که هیچ لینک داخلی به آن‌ها اشاره نمی‌کند برای خزنده‌های موتور جستجو نامرئی هستند. لینک‌هایی از صفحات مرتبط اضافه کنید تا کشف شوند.',
-    'issue.L06.desc': 'صفحاتی که بیش از 3 کلیک از صفحه اصلی فاصله دارند برای کاربران و خزنده‌ها سخت برای پیدا کردن هستند. معماری سایت و لینک‌دهی داخلی را بهبود دهید.'
+    'issue.L06.desc': 'صفحاتی که بیش از 3 کلیک از صفحه اصلی فاصله دارند برای کاربران و خزنده‌ها سخت برای پیدا کردن هستند. معماری سایت و لینک‌دهی داخلی را بهبود دهید.',
+    
+    // New Indexability Issues - Persian
+    'issue.E07.title': 'robots.txt صفحات را بلاک کرده',
+    'issue.E07.desc': 'فایل robots.txt صفحات مهم را از خزش بلاک کرده است. قوانین disallow را بررسی و به‌روز کنید تا خزش محتوای ارزشمند مجاز شود.',
+    'issue.E12.title': 'هدر X-Robots-Tag بلاک می‌کند',
+    'issue.E12.desc': 'سرور هدر X-Robots-Tag ارسال می‌کند که ایندکس را بلاک می‌کند. تنظیمات سرور را بررسی و هدرهای noindex غیرضروری را حذف کنید.',
+    'issue.E14.title': 'Canonical دامنه خارجی',
+    'issue.E14.desc': 'Canonical URL به دامنه دیگری اشاره می‌کند. این باعث انتقال تمام ارزش SEO به سایت خارجی می‌شود. Canonicalها باید به URLهای خودتان اشاره کنند.',
+    'issue.E18.title': 'صفحات محافظت‌شده با رمز',
+    'issue.E18.desc': 'صفحات نیاز به احراز هویت دارند. موتورهای جستجو نمی‌توانند محتوای محافظت‌شده با رمز را بخزند. صفحات مهم را عمومی کنید.',
+    'issue.E19.title': 'حلقه ریدایرکت بی‌نهایت',
+    'issue.E19.desc': 'صفحات در حلقه ریدایرکت گیر افتاده‌اند. این مانع دسترسی خزنده‌ها و کاربران به محتوا می‌شود. تنظیمات ریدایرکت را اصلاح کنید.',
+    
+    // Enhanced Freshness Issues - Persian
+    'issue.C01.title': 'پست‌های وبلاگ قدیمی (>3 ماه)',
+    'issue.C01.desc': 'پست‌های وبلاگ بیش از 3 ماه است که به‌روزرسانی نشده‌اند. محتوای تازه در جستجو بهتر عمل می‌کند. پست‌های قدیمی را با اطلاعات جدید به‌روز کنید.',
+    'issue.C02.title': 'محصولات قدیمی (>6 ماه)',
+    'issue.C02.desc': 'صفحات محصول بیش از 6 ماه است که به‌روزرسانی نشده‌اند. اطلاعات محصول را به‌روز نگه دارید برای رتبه‌بهتر و تجربه کاربری.',
+    'issue.C04.title': 'صفحات قدیمی (>12 ماه)',
+    'issue.C04.desc': 'صفحات استاتیک بیش از 12 ماه است که به‌روزرسانی نشده‌اند. صفحات مهم را بررسی و به‌روز کنید تا relevance حفظ شود.',
+    'issue.C05.title': 'تازگی کلی سایت پایین',
+    'issue.C05.desc': 'کمتر از 50% محتوا تازه است. گوگل سایت‌های با محتوای مرتباً به‌روزرسانی‌شده را ترجیح می‌دهد. برنامه به‌روزرسانی محتوا تنظیم کنید.',
+    
+    // New Technical Issues - Persian
+    'issue.E13.title': 'صفحات Soft 404',
+    'issue.E13.desc': 'صفحات وضعیت 200 برمی‌گردانند اما محتوای "not found" نمایش می‌دهند. این موتورهای جستجو را سردرگم می‌کند. برای صفحات مفقودی وضعیت 404 صحیح برگردانید.'
   }
 };
 

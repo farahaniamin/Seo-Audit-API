@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Audit Report - https://example.com/</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f3f4f6;
+      color: #1f2937;
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    /* Header */
+    .header {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: bold;
+    }
+    
+    /* Score Display */
+    .score-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .score-section { grid-template-columns: 1fr; }
+    }
+    
+    .score-gauge-container {
+      display: flex;
+      justify-content: center;
+    }
+    .score-gauge {
+      position: relative;
+      width: 200px; height: 200px;
+    }
+    .score-gauge svg {
+      transform: rotate(-90deg);
+    }
+    .score-value {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .score-number { font-size: 48px; font-weight: bold; }
+    .score-label { font-size: 14px; color: #6b7280; }
+    
+    .grade-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .stat-card {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-value { font-size: 24px; font-weight: bold; }
+    .stat-label { font-size: 12px; color: #6b7280; }
+    
+    /* Section Cards */
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #111827;
+    }
+    
+    /* Pillar Cards */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+    .pillar-card {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .pillar-icon {
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 8px;
+      font-size: 20px;
+    }
+    .pillar-name { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+    .pillar-score { font-size: 24px; font-weight: bold; }
+    .progress-bar {
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1s ease-out;
+    }
+    
+    /* Charts */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+    .chart-container {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 16px;
+      height: 300px;
+      position: relative;
+    }
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #374151;
+    }
+    canvas {
+      width: 100% !important;
+      height: calc(100% - 30px) !important;
+    }
+    
+    /* Issues Table */
+    .issues-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    .issues-table th,
+    .issues-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .issues-table th {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .severity-badge {
+      display: inline-flex;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .severity-critical { background: #fee2e2; color: #991b1b; }
+    .severity-high { background: #ffedd5; color: #9a3412; }
+    .severity-medium { background: #fef3c7; color: #92400e; }
+    .severity-low { background: #dbeafe; color: #1e40af; }
+    
+    /* Clickable Issue Rows */
+    .issue-row {
+      transition: background-color 0.2s;
+    }
+    .issue-row:hover {
+      background-color: #f9fafb;
+    }
+    
+    /* Lighthouse Metrics */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .metric-card {
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .metric-value {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .metric-label { font-size: 14px; color: #6b7280; }
+    .metric-sublabel { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    
+    /* Colors */
+    .text-green { color: #10b981; }
+    .text-yellow { color: #f59e0b; }
+    .text-orange { color: #f97316; }
+    .text-red { color: #ef4444; }
+    .bg-green { background: #10b981; }
+    .bg-yellow { background: #f59e0b; }
+    .bg-orange { background: #f97316; }
+    .bg-red { background: #ef4444; }
+    .bg-blue { background: #3b82f6; }
+    .bg-purple { background: #8b5cf6; }
+    .bg-pink { background: #ec4899; }
+    
+    /* Responsive */
+    @media (max-width: 640px) {
+      .container { padding: 12px; }
+      .score-number { font-size: 36px; }
+      .pillars-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">
+          <div class="logo-icon">SEO</div>
+          <div>
+            <h1 style="font-size: 20px; font-weight: 600;">SEO Audit Report</h1>
+            <p style="font-size: 14px; color: #6b7280;">https://example.com/</p>
+          </div>
+        </div>
+        <button onclick="downloadReport()" style="
+          padding: 8px 16px;
+          background: #3b82f6;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+        ">
+          Download Report
+        </button>
+      </div>
+      
+      <div class="score-section">
+        <div>
+          <div class="grade-badge" style="background: #3b82f620; color: #3b82f6;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></span>
+            B - Good
+          </div>
+          <h2 style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">
+            Overall score: 87.2/100
+          </h2>
+          <p style="color: #6b7280;">Audit completed in 11.8s</p>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">1</div>
+              <div class="stat-label">Pages Checked</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">1</div>
+              <div class="stat-label">Pages Discovered</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="score-gauge-container">
+          <div class="score-gauge">
+            <svg width="200" height="200" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" stroke-width="8"/>
+              <circle id="score-circle" cx="50" cy="50" r="45" fill="none" stroke="#3b82f6" 
+                      stroke-width="8" stroke-linecap="round"
+                      stroke-dasharray="282.7433388230814" 
+                      stroke-dashoffset="282.7433388230814"
+                      style="transition: stroke-dashoffset 1s ease-out;"/>
+            </svg>
+            <div class="score-value">
+              <div class="score-number">87.2</div>
+              <div class="score-label">/100</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Pillar Scores -->
+    <div class="section">
+      <h2 class="section-title">Pillar Scores</h2>
+      <div class="pillars-grid">
+        
+    <div class="pillar-card">
+      <div class="pillar-icon" style="background: #10b98120; color: #10b981;">
+        🔍
+      </div>
+      <div class="pillar-name">Indexability</div>
+      <div class="pillar-score" style="color: #10b981;">95.0</div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 95%; background: #10b981;"></div>
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-icon" style="background: #10b98120; color: #10b981;">
+        🕷️
+      </div>
+      <div class="pillar-name">Crawlability</div>
+      <div class="pillar-score" style="color: #10b981;">94.7</div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 94.7%; background: #10b981;"></div>
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-icon" style="background: #f59e0b20; color: #f59e0b;">
+        📝
+      </div>
+      <div class="pillar-name">On-Page</div>
+      <div class="pillar-score" style="color: #f59e0b;">71.3</div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 71.3%; background: #f59e0b;"></div>
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-icon" style="background: #3b82f620; color: #3b82f6;">
+        ⚙️
+      </div>
+      <div class="pillar-name">Technical</div>
+      <div class="pillar-score" style="color: #3b82f6;">88.0</div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 88%; background: #3b82f6;"></div>
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-icon" style="background: #ef444420; color: #ef4444;">
+        🕐
+      </div>
+      <div class="pillar-name">Freshness</div>
+      <div class="pillar-score" style="color: #ef4444;">0.0</div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 0%; background: #ef4444;"></div>
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-icon" style="background: #10b98120; color: #10b981;">
+        ⚡
+      </div>
+      <div class="pillar-name">Performance</div>
+      <div class="pillar-score" style="color: #10b981;">93.0</div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 93%; background: #10b981;"></div>
+      </div>
+    </div>
+    
+      </div>
+    </div>
+    
+    
+  <div class="section">
+    <h2 class="section-title">Charts</h2>
+    <div class="charts-grid">
+      <div class="chart-container">
+        <div class="chart-title">Pillar Scores</div>
+        <canvas id="pillarsCanvas"></canvas>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Issues Distribution</div>
+        <canvas id="issuesCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+  
+    
+    
+    
+    
+  <div class="section">
+    <h2 class="section-title">Detected Issues</h2>
+    <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">
+      Click on any issue row to see affected pages. Each issue has a specific weight and penalty impact.
+    </p>
+    <table class="issues-table">
+      <thead>
+        <tr>
+          <th>Severity</th>
+          <th>Code</th>
+          <th>Issue / Description</th>
+          <th>Pages</th>
+          <th>Ratio</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+    <tr style="cursor: pointer;" onclick="togglePages('F04')" class="issue-row">
+      <td><span class="severity-badge severity-high">high</span></td>
+      <td><strong>F04</strong></td>
+      <td>
+        <div>Missing or too short meta description</div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Meta description is missing or too short. Write helpful snippets to improve CTR.</div>
+        <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">Weight: 8 | Penalty: 14.96</div>
+      </td>
+      <td>
+        1
+        <div style="font-size: 11px; color: #3b82f6;">(click to view)</div>
+      </td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="flex: 1; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+            <div style="width: 0.0%; height: 100%; background: #3b82f6; border-radius: 3px;"></div>
+          </div>
+          <span style="font-size: 12px; color: #6b7280; min-width: 45px;">0.0%</span>
+        </div>
+        
+        <div id="pages-F04" style="display: none; margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 6px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">
+            Pages with this issue (1 total):
+          </div>
+          <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #374151; line-height: 1.8;">
+            <li><a href="https://example.com/" target="_blank" style="color: #3b82f6; text-decoration: none;">https://example.com/</a></li>
+          </ul>
+          
+        </div>
+      
+      </td>
+    </tr>
+    
+    <tr style="cursor: pointer;" onclick="togglePages('C03')" class="issue-row">
+      <td><span class="severity-badge severity-medium">medium</span></td>
+      <td><strong>C03</strong></td>
+      <td>
+        <div>Thin content (&lt;300 words)</div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Pages with less than 300 words of content may be considered thin content. Add more valuable, unique content.</div>
+        <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">Weight: 8 | Penalty: 10.65</div>
+      </td>
+      <td>
+        1
+        <div style="font-size: 11px; color: #3b82f6;">(click to view)</div>
+      </td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="flex: 1; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+            <div style="width: 0.0%; height: 100%; background: #3b82f6; border-radius: 3px;"></div>
+          </div>
+          <span style="font-size: 12px; color: #6b7280; min-width: 45px;">0.0%</span>
+        </div>
+        
+        <div id="pages-C03" style="display: none; margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 6px;">
+          <div style="font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">
+            Pages with this issue (1 total):
+          </div>
+          <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #374151; line-height: 1.8;">
+            <li><a href="https://example.com/" target="_blank" style="color: #3b82f6; text-decoration: none;">https://example.com/</a></li>
+          </ul>
+          
+        </div>
+      
+      </td>
+    </tr>
+    
+      </tbody>
+    </table>
+    
+    <script>
+      function togglePages(issueId) {
+        const pagesDiv = document.getElementById('pages-' + issueId);
+        if (pagesDiv) {
+          const isVisible = pagesDiv.style.display !== 'none';
+          pagesDiv.style.display = isVisible ? 'none' : 'block';
+        }
+      }
+    </script>
+  </div>
+  
+    
+    
+  <div class="section">
+    <h2 class="section-title">Issue Detection Thresholds</h2>
+    <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">
+      Pages are flagged when they meet these conditions:
+    </p>
+    <table class="issues-table">
+      <thead>
+        <tr>
+          <th>Severity</th>
+          <th>Code</th>
+          <th>Issue</th>
+          <th>Threshold</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+    <tr>
+      <td><span class="severity-badge severity-critical">critical</span></td>
+      <td><strong>E01</strong></td>
+      <td>noindex</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">noindex tag present</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-critical">critical</span></td>
+      <td><strong>E02</strong></td>
+      <td>4xx Error</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">Status code 400-499</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-medium">medium</span></td>
+      <td><strong>E04</strong></td>
+      <td>Redirect Chain</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">>1 redirect</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-high">high</span></td>
+      <td><strong>E06</strong></td>
+      <td>Canonical Mismatch</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">Final URL ≠ canonical</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-high">high</span></td>
+      <td><strong>F01</strong></td>
+      <td>Title Too Short</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;"><10 chars</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-high">high</span></td>
+      <td><strong>F04</strong></td>
+      <td>Meta Description Short</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;"><50 chars</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-medium">medium</span></td>
+      <td><strong>F07</strong></td>
+      <td>Missing H1</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">0 H1 tags</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-medium">medium</span></td>
+      <td><strong>F08</strong></td>
+      <td>Multiple H1s</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">>1 H1 tags</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-low">low</span></td>
+      <td><strong>G01</strong></td>
+      <td>Images Missing Alt</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">>0 images without alt</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-high">high</span></td>
+      <td><strong>M01</strong></td>
+      <td>Missing Viewport</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">No viewport meta</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-medium">medium</span></td>
+      <td><strong>C03</strong></td>
+      <td>Thin Content</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;"><300 words</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-critical">critical</span></td>
+      <td><strong>S01</strong></td>
+      <td>Not Using HTTPS</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">HTTP URL</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-high">high</span></td>
+      <td><strong>S02</strong></td>
+      <td>Mixed Content</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">HTTP resources on HTTPS</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-medium">medium</span></td>
+      <td><strong>P01</strong></td>
+      <td>Slow Server Response</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">TTFB >800ms</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-critical">critical</span></td>
+      <td><strong>L01</strong></td>
+      <td>Poor Performance</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">Lighthouse score <50</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-high">high</span></td>
+      <td><strong>L02</strong></td>
+      <td>Slow LCP</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">LCP >2.5s</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-high">high</span></td>
+      <td><strong>L03</strong></td>
+      <td>Poor CLS</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">CLS >0.1</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-medium">medium</span></td>
+      <td><strong>L04</strong></td>
+      <td>High TBT</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">TBT >200ms</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-high">high</span></td>
+      <td><strong>L05</strong></td>
+      <td>Orphan Page</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">0 inbound links</td>
+    </tr>
+  
+    <tr>
+      <td><span class="severity-badge severity-medium">medium</span></td>
+      <td><strong>L06</strong></td>
+      <td>Deep Page</td>
+      <td style="font-family: monospace; font-size: 12px; color: #6b7280;">>3 levels from homepage</td>
+    </tr>
+  
+      </tbody>
+    </table>
+  </div>
+  
+    
+    
+  <div class="section">
+    <h2 class="section-title">Core Web Vitals</h2>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-value text-green">0.84s</div>
+        <div class="metric-label">LCP</div>
+        <div class="metric-sublabel">Largest Contentful Paint</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value text-green">N/A</div>
+        <div class="metric-label">CLS</div>
+        <div class="metric-sublabel">Cumulative Layout Shift</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value text-green">9ms</div>
+        <div class="metric-label">TBT</div>
+        <div class="metric-sublabel">Total Blocking Time</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value text-green">100</div>
+        <div class="metric-label">Performance</div>
+        <div class="metric-sublabel">Lighthouse Score</div>
+      </div>
+    </div>
+  </div>
+  
+    
+    
+    
+    <footer style="text-align: center; padding: 40px 0; color: #9ca3af; font-size: 14px;">
+      <p>Generated by SEO Audit Bot</p>
+      <p style="font-size: 12px; margin-top: 4px;">2/25/2026, 2:25:06 AM</p>
+    </footer>
+  </div>
+  
+  <script>
+    // Animate score gauge
+    setTimeout(() => {
+      const circle = document.getElementById('score-circle');
+      if (circle) {
+        const circumference = Math.PI * 90;
+        const offset = circumference - (87.2 / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+      }
+    }, 100);
+    
+    // Download report
+    function downloadReport() {
+      const html = document.documentElement.outerHTML;
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'seo-audit-report.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    // Draw simple bar chart using Canvas API
+    function drawBarChart(canvasId, labels, data, colors) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      const padding = 40;
+      const chartWidth = rect.width - padding * 2;
+      const chartHeight = rect.height - padding * 2;
+      const barWidth = chartWidth / data.length * 0.6;
+      const spacing = chartWidth / data.length;
+      const maxValue = 100;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      
+      // Draw bars
+      data.forEach((value, i) => {
+        const barHeight = (value / maxValue) * chartHeight;
+        const x = padding + i * spacing + (spacing - barWidth) / 2;
+        const y = rect.height - padding - barHeight;
+        
+        // Draw bar
+        ctx.fillStyle = colors[i];
+        ctx.fillRect(x, y, barWidth, barHeight);
+        
+        // Draw value on top
+        ctx.fillStyle = '#374151';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(value.toFixed(0), x + barWidth / 2, y - 5);
+        
+        // Draw label at bottom
+        ctx.save();
+        ctx.translate(x + barWidth / 2, rect.height - padding + 15);
+        ctx.rotate(-Math.PI / 6);
+        ctx.fillText(labels[i], 0, 0);
+        ctx.restore();
+      });
+      
+      // Draw Y axis
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.beginPath();
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(padding, rect.height - padding);
+      ctx.stroke();
+      
+      // Draw Y axis labels
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'right';
+      for (let i = 0; i <= 5; i++) {
+        const y = rect.height - padding - (i / 5) * chartHeight;
+        ctx.fillText((i * 20).toString(), padding - 5, y + 3);
+        
+        // Grid line
+        if (i > 0) {
+          ctx.strokeStyle = '#f3f4f6';
+          ctx.beginPath();
+          ctx.moveTo(padding, y);
+          ctx.lineTo(rect.width - padding, y);
+          ctx.stroke();
+        }
+      }
+    }
+    
+    // Draw doughnut chart
+    function drawDoughnutChart(canvasId, labels, data, colors) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2 - 20;
+      const radius = Math.min(centerX, centerY) - 20;
+      const innerRadius = radius * 0.6;
+      
+      const total = data.reduce((a, b) => a + b, 0);
+      let currentAngle = -Math.PI / 2;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      
+      // Draw segments
+      data.forEach((value, i) => {
+        if (value === 0) return;
+        
+        const sliceAngle = (value / total) * Math.PI * 2;
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+        ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+        
+        currentAngle += sliceAngle;
+      });
+      
+      // Draw legend
+      let legendY = rect.height - 30;
+      const legendX = centerX - (labels.length * 60) / 2;
+      
+      labels.forEach((label, i) => {
+        if (data[i] === 0) return;
+        
+        const x = legendX + i * 60;
+        
+        ctx.fillStyle = colors[i];
+        ctx.fillRect(x, legendY, 10, 10);
+        
+        ctx.fillStyle = '#374151';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(label, x + 14, legendY + 9);
+      });
+    }
+    
+    // Initialize charts when page loads
+    window.addEventListener('load', () => {
+      // Pillar scores bar chart
+      drawBarChart('pillarsCanvas', 
+        ["Indexability","Crawlability","On-Page","Technical","Freshness","Performance"],
+        [95, 94.7, 71.3, 88, 0, 93],
+        ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9']
+      );
+      
+      // Issues distribution doughnut chart
+      drawDoughnutChart('issuesCanvas',
+        ["Critical","High","Medium","Low"],
+        [0, 1, 1, 0],
+        ['#ef4444', '#f97316', '#eab308', '#22c55e']
+      );
+    });
+    
+    // Redraw on resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        drawBarChart('pillarsCanvas', 
+          ["Indexability","Crawlability","On-Page","Technical","Freshness","Performance"],
+          [95, 94.7, 71.3, 88, 0, 93],
+          ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9']
+        );
+        drawDoughnutChart('issuesCanvas',
+          ["Critical","High","Medium","Low"],
+          [0, 1, 1, 0],
+          ['#ef4444', '#f97316', '#eab308', '#22c55e']
+        );
+      }, 250);
+    });
+  </script>
+</body>
+</html>
