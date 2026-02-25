@@ -95,6 +95,14 @@ export type FreshnessData = {
   recommendations: string[];
   latest_products: LatestContentItem[];
   latest_posts: LatestContentItem[];
+  by_type?: Record<string, {
+    score: number;
+    total: number;
+    fresh: number;
+    stale: number;
+    threshold: number;
+  }>;
+  thresholds?: Record<string, number>;
 };
 
 // Lighthouse Performance Data

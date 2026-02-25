@@ -417,6 +417,22 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
       color: var(--color-warning);
     }
     
+    .check-card.check-passed {
+      background: var(--color-success-light);
+      border-color: var(--color-success);
+      opacity: 0.8;
+    }
+    
+    .check-card.check-failed {
+      background: white;
+      border-color: var(--color-error);
+    }
+    
+    .check-card.check-expanded {
+      border-radius: var(--radius) var(--radius) 0 0;
+      box-shadow: var(--shadow-md);
+    }
+    
     .check-content {
       flex: 1;
     }
@@ -447,6 +463,104 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
       font-weight: 600;
       font-size: 14px;
       color: var(--color-gray-700);
+    }
+    
+    .check-status-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .pass-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: var(--color-success-light);
+      color: var(--color-success);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    
+    .view-pages {
+      font-size: 12px;
+      color: var(--color-info);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    /* Check Details (Expandable) */
+    .check-details {
+      background: var(--color-gray-50);
+      border: 1px solid var(--color-gray-200);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 16px 20px;
+      margin: -1px 0 0 0;
+      animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .check-details-header {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-gray-700);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--color-gray-200);
+    }
+    
+    .affected-pages-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .affected-pages-list li {
+      margin-bottom: 8px;
+    }
+    
+    .affected-pages-list a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: white;
+      border-radius: var(--radius-sm);
+      color: var(--color-info);
+      font-size: 13px;
+      text-decoration: none;
+      word-break: break-all;
+      transition: all 0.2s ease;
+    }
+    
+    .affected-pages-list a:hover {
+      background: var(--color-info-light);
+      transform: translateX(4px);
+    }
+    
+    .more-pages {
+      font-size: 12px;
+      color: var(--color-gray-500);
+      font-style: italic;
+      margin-top: 8px;
+      padding: 8px;
+      text-align: center;
+      background: var(--color-gray-100);
+      border-radius: var(--radius-sm);
     }
     
     /* Severity Badge */
@@ -805,6 +919,34 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
       URL.revokeObjectURL(url);
     }
     
+    // Toggle check details (expandable page lists)
+    function toggleCheckDetails(checkId) {
+      const detailsDiv = document.getElementById('check-details-' + checkId);
+      const checkCard = document.querySelector('[onclick="toggleCheckDetails(\'' + checkId + '\')"]');
+      const viewPagesSpan = checkCard?.querySelector('.view-pages');
+      
+      if (detailsDiv) {
+        const isVisible = detailsDiv.style.display !== 'none';
+        detailsDiv.style.display = isVisible ? 'none' : 'block';
+        
+        // Update the arrow icon
+        if (viewPagesSpan) {
+          viewPagesSpan.textContent = isVisible 
+            ? (document.dir === 'rtl' ? 'مشاهده صفحات ▼' : 'View pages ▼')
+            : (document.dir === 'rtl' ? 'مخفی کردن صفحات ▲' : 'Hide pages ▲');
+        }
+        
+        // Add/remove active class for styling
+        if (checkCard) {
+          if (!isVisible) {
+            checkCard.classList.add('check-expanded');
+          } else {
+            checkCard.classList.remove('check-expanded');
+          }
+        }
+      }
+    }
+    
     // Canvas charts (same as before but modernized)
     function drawBarChart(canvasId, labels, data, colors) {
       const canvas = document.getElementById(canvasId);
@@ -1101,6 +1243,52 @@ function generateModernPillarCards(pillars: any, issuesByPillar: any, lang: 'en'
   }).join('');
 }
 
+// Define all possible checks for each pillar
+const ALL_CHECKS: Record<string, Array<{id: string, title: string, desc: string}>> = {
+  indexability: [
+    { id: 'E01', title: 'Noindex meta tag', desc: 'Pages blocked from indexing via meta robots tag' },
+    { id: 'E07', title: 'robots.txt blocking', desc: 'Pages blocked via robots.txt file' },
+    { id: 'E12', title: 'X-Robots-Tag header', desc: 'Server headers blocking indexing' },
+    { id: 'E14', title: 'Cross-domain canonical', desc: 'Canonical URLs pointing to external domains' },
+    { id: 'E18', title: 'Password protected', desc: 'Pages requiring authentication' },
+  ],
+  crawlability: [
+    { id: 'E02', title: '4xx errors', desc: 'Broken pages returning client errors' },
+    { id: 'E19', title: 'Redirect loops', desc: 'Infinite redirect chains' },
+    { id: 'E04', title: 'Redirect chains', desc: 'Multiple redirects in sequence' },
+    { id: 'L06', title: 'Deep pages', desc: 'Pages more than 3 clicks from homepage' },
+  ],
+  onpage: [
+    { id: 'F01', title: 'Missing title', desc: 'Pages without title tags or too short' },
+    { id: 'F04', title: 'Missing meta description', desc: 'Pages without meta descriptions' },
+    { id: 'F07', title: 'Missing H1', desc: 'Pages without H1 heading' },
+    { id: 'F08', title: 'Multiple H1s', desc: 'Pages with more than one H1' },
+    { id: 'C03', title: 'Thin content', desc: 'Pages with less than 300 words' },
+  ],
+  technical: [
+    { id: 'E06', title: 'Canonical mismatch', desc: 'Canonical URL does not match page URL' },
+    { id: 'M01', title: 'Missing viewport', desc: 'No mobile viewport meta tag' },
+    { id: 'S01', title: 'Not using HTTPS', desc: 'Pages on HTTP instead of HTTPS' },
+    { id: 'S02', title: 'Mixed content', desc: 'HTTP resources on HTTPS pages' },
+    { id: 'P01', title: 'Slow TTFB', desc: 'Time to First Byte over 800ms' },
+    { id: 'L05', title: 'Orphan pages', desc: 'Pages with no inbound links' },
+    { id: 'E13', title: 'Soft 404s', desc: 'Missing pages returning 200 status' },
+    { id: 'G01', title: 'Missing alt text', desc: 'Images without alt attributes' },
+  ],
+  freshness: [
+    { id: 'C01', title: 'Stale blog posts', desc: 'Blog posts not updated in 3+ months' },
+    { id: 'C02', title: 'Stale products', desc: 'Products not updated in 6+ months' },
+    { id: 'C04', title: 'Stale pages', desc: 'Static pages not updated in 12+ months' },
+    { id: 'C05', title: 'Overall freshness', desc: 'Less than 50% content is fresh' },
+  ],
+  performance: [
+    { id: 'L01', title: 'Poor Lighthouse score', desc: 'Performance score below 50' },
+    { id: 'L02', title: 'Slow LCP', desc: 'Largest Contentful Paint over 2.5s' },
+    { id: 'L03', title: 'Poor CLS', desc: 'Cumulative Layout Shift over 0.1' },
+    { id: 'L04', title: 'High TBT', desc: 'Total Blocking Time over 200ms' },
+  ],
+};
+
 function generateDetailedChecksSection(pillars: any, issuesByPillar: any, breakdown: any, lang: 'en' | 'fa'): string {
   const isRTL = lang === 'fa';
   const keys = ['indexability', 'crawlability', 'onpage', 'technical', 'freshness', 'performance'];
@@ -1111,9 +1299,11 @@ function generateDetailedChecksSection(pillars: any, issuesByPillar: any, breakd
   
   keys.forEach((key, i) => {
     const issues = issuesByPillar[key] || [];
-    if (issues.length === 0) return;
-    
+    const allChecks = ALL_CHECKS[key] || [];
     const color = colors[i];
+    
+    // Create a map of found issues for quick lookup
+    const foundIssues = new Map(issues.map((issue: any) => [issue.id, issue]));
     
     html += `
     <div class="section">
@@ -1121,28 +1311,67 @@ function generateDetailedChecksSection(pillars: any, issuesByPillar: any, breakd
         <div class="section-icon" style="background: ${color}20; color: ${color};">
           ${i === 0 ? '🔍' : i === 1 ? '🕷️' : i === 2 ? '📝' : i === 3 ? '⚙️' : i === 4 ? '🕐' : '⚡'}
         </div>
-        <div class="section-title">${labels[i]} ${isRTL ? '- بررسی جزئی' : '- Detailed Checks'}</div>
+        <div class="section-title">${labels[i]} ${isRTL ? '- بررسی کامل' : '- Complete Checks'}</div>
         <div class="section-score" style="color: ${color};">${pillars[key]?.toFixed(1) || 0}</div>
       </div>
       
       <div class="checks-grid">
-        ${issues.map((issue: any) => {
-          const severityClass = issue.severity === 'critical' || issue.severity === 'high' ? 'fail' : issue.severity === 'medium' ? 'warning' : 'warning';
-          const icon = severityClass === 'fail' ? '✕' : '!';
+        ${allChecks.map((check: any) => {
+          const foundIssue: any = foundIssues.get(check.id);
+          const isPassed = !foundIssue;
+          const severity = foundIssue?.severity || '';
+          const icon = isPassed ? '✓' : severity === 'critical' || severity === 'high' ? '✕' : '!';
+          const statusClass = isPassed ? 'pass' : severity === 'critical' || severity === 'high' ? 'fail' : 'warning';
+          const affectedPages = foundIssue?.affected_pages || 0;
+          const exampleUrls = foundIssue?.example_urls || [];
           
-          return `
-          <div class="check-card">
-            <div class="check-icon ${severityClass}">${icon}</div>
+          let cardHtml = `
+          <div class="check-card ${isPassed ? 'check-passed' : 'check-failed'}" style="cursor: ${foundIssue ? 'pointer' : 'default'};" ${foundIssue ? `onclick="toggleCheckDetails('${check.id}')"` : ''}>
+            <div class="check-icon ${statusClass}">${icon}</div>
             <div class="check-content">
-              <div class="check-title">${issue.id} - ${escapeHtml(issue.title || issue.id)}</div>
-              <div class="check-desc">${escapeHtml(issue.description || '')}</div>
-            </div>
-            <div class="check-meta">
-              <span class="severity-badge severity-${issue.severity}">${issue.severity}</span>
-              <span class="check-count">${issue.affected_pages} ${isRTL ? 'صفحه' : 'pages'}</span>
+              <div class="check-title">${check.id} - ${escapeHtml(check.title)}</div>
+              <div class="check-desc">${escapeHtml(check.desc)}</div>
+              ${foundIssue ? `
+                <div class="check-status-line">
+                  <span class="severity-badge severity-${severity}">${severity}</span>
+                  <span class="check-count">${affectedPages} ${isRTL ? 'صفحه' : 'pages affected'}</span>
+                  ${exampleUrls.length > 0 ? `<span class="view-pages">${isRTL ? 'مشاهده صفحات' : 'View pages'} ▼</span>` : ''}
+                </div>
+              ` : `
+                <div class="check-status-line">
+                  <span class="pass-badge">${isRTL ? '✓ عبور' : '✓ Pass'}</span>
+                </div>
+              `}
             </div>
           </div>
           `;
+          
+          // Add expandable section for affected pages if issue exists
+          if (foundIssue && exampleUrls.length > 0) {
+            const displayUrls = exampleUrls.slice(0, 10);
+            const remainingCount = exampleUrls.length - 10;
+            
+            cardHtml += `
+            <div id="check-details-${check.id}" class="check-details" style="display: none;">
+              <div class="check-details-header">
+                ${isRTL ? 'صفحات دارای این مشکل:' : 'Pages with this issue:'} ${affectedPages} ${isRTL ? 'صفحه' : 'pages'}
+              </div>
+              <ul class="affected-pages-list">
+                ${displayUrls.map((url: string) => `
+                  <li>
+                    <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
+                      ${escapeHtml(url)}
+                      <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                  </li>
+                `).join('')}
+              </ul>
+              ${remainingCount > 0 ? `<div class="more-pages">${isRTL ? `و ${remainingCount} صفحه دیگر...` : `And ${remainingCount} more pages...`}</div>` : ''}
+            </div>
+            `;
+          }
+          
+          return cardHtml;
         }).join('')}
       </div>
     </div>

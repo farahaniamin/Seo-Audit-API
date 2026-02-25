@@ -9,7 +9,7 @@ import { buildTelegram } from './telegram.js';
 import { inferLang } from '../utils/i18n.js';
 import { normalizeUrl as normalizeUrlStrict, isCrawlableUrl, sameHost } from './url.js';
 import { fetchWpData, getPriorityUrls } from './wpApi.js';
-import { calculateFreshnessScore, formatFreshnessData, getFreshnessRecommendations } from './freshness.js';
+import { calculateFreshnessScore, calculateFreshnessByType, formatFreshnessData, getFreshnessRecommendations } from './freshness.js';
 import { runLighthouseOnPages, aggregateLighthouseResults } from './lighthouse.js';
 
 function nowIso() { return new Date().toISOString(); }
@@ -166,15 +166,27 @@ export async function runAudit(req: AuditCreateRequest, auditId: string, onProgr
   let freshnessScoreData: { score: number; stale_count: number; total_items: number } | undefined;
 
   if (wpData.available && wpData.contentItems.length > 0) {
-    const score = calculateFreshnessScore(wpData.lastModifiedDates, 6);
+    // Calculate overall freshness score using the enhanced function
+    const score = calculateFreshnessScore(wpData.contentItems);
+    
+    // Get detailed breakdown by content type
+    const freshnessByType = calculateFreshnessByType(wpData.contentItems);
+    
+    const formattedData = formatFreshnessData(wpData.contentItems, score);
     freshnessData = {
-      ...formatFreshnessData(wpData.contentItems, score),
-      recommendations: getFreshnessRecommendations(wpData.contentItems, lang),
+      ...formattedData,
+      by_type: freshnessByType,
+      thresholds: {
+        post: 3,
+        product: 6,
+        page: 12,
+        default: 6
+      }
     };
     freshnessFindings = buildFreshnessFindings(lang, wpData.contentItems);
     freshnessScoreData = {
       score,
-      stale_count: freshnessData.stale_count,
+      stale_count: formattedData.stale_count,
       total_items: wpData.totalItems,
     };
   }
