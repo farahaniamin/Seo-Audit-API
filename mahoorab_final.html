@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Audit Report - https://mahoorab.com/</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --color-success: #10b981;
+      --color-success-light: #d1fae5;
+      --color-warning: #f59e0b;
+      --color-warning-light: #fef3c7;
+      --color-error: #ef4444;
+      --color-error-light: #fee2e2;
+      --color-info: #3b82f6;
+      --color-info-light: #dbeafe;
+      --color-gray-50: #f9fafb;
+      --color-gray-100: #f3f4f6;
+      --color-gray-200: #e5e7eb;
+      --color-gray-300: #d1d5db;
+      --color-gray-600: #4b5563;
+      --color-gray-700: #374151;
+      --color-gray-800: #1f2937;
+      --color-gray-900: #111827;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --radius-sm: 6px;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+    }
+    
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--color-gray-100);
+      color: var(--color-gray-800);
+      line-height: 1.6;
+    }
+    
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    
+    /* Header */
+    .header {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    
+    .logo { 
+      display: flex; 
+      align-items: center; 
+      gap: 16px; 
+    }
+    
+    .logo-icon {
+      width: 48px; 
+      height: 48px;
+      background: linear-gradient(135deg, var(--color-info), #8b5cf6);
+      border-radius: var(--radius);
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      color: white; 
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: var(--shadow);
+    }
+    
+    /* Score Section */
+    .score-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    
+    @media (max-width: 768px) {
+      .score-section { grid-template-columns: 1fr; gap: 32px; }
+    }
+    
+    .score-info {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .grade-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      width: fit-content;
+    }
+    
+    .score-display {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    
+    .score-number { 
+      font-size: 56px; 
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    
+    .score-total {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-gray-400);
+    }
+    
+    .score-meta {
+      color: var(--color-gray-600);
+      font-size: 14px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 8px;
+    }
+    
+    .stat-card {
+      background: var(--color-gray-50);
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      text-align: center;
+      border: 1px solid var(--color-gray-200);
+    }
+    
+    .stat-value { 
+      font-size: 28px; 
+      font-weight: 700;
+      color: var(--color-gray-900);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    
+    .stat-label { 
+      font-size: 13px; 
+      color: var(--color-gray-600);
+      font-weight: 500;
+    }
+    
+    /* Score Gauge */
+    .score-gauge-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .score-gauge {
+      position: relative;
+      width: 220px; 
+      height: 220px;
+    }
+    
+    .score-gauge svg {
+      transform: rotate(-90deg);
+    }
+    
+    .score-gauge-bg {
+      fill: none;
+      stroke: var(--color-gray-200);
+      stroke-width: 12;
+    }
+    
+    .score-gauge-fill {
+      fill: none;
+      stroke-width: 12;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1.5s ease-out;
+    }
+    
+    .score-gauge-text {
+      position: absolute;
+      top: 50%; 
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    
+    .score-gauge-value { 
+      font-size: 48px; 
+      font-weight: 800;
+      line-height: 1;
+    }
+    
+    .score-gauge-label { 
+      font-size: 14px; 
+      color: var(--color-gray-500);
+      font-weight: 500;
+    }
+    
+    /* Section Cards */
+    .section {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--color-gray-200);
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .section-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-gray-900);
+      flex: 1;
+    }
+    
+    .section-score {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    
+    /* Pillar Cards Grid */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    
+    .pillar-card {
+      background: var(--color-gray-50);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 1px solid var(--color-gray-200);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    
+    .pillar-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .pillar-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .pillar-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    
+    .pillar-info {
+      flex: 1;
+    }
+    
+    .pillar-name { 
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-gray-700);
+    }
+    
+    .pillar-score { 
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    
+    .pillar-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background: var(--color-gray-200);
+      border-radius: 100px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 1s ease-out;
+    }
+    
+    .pillar-issues {
+      font-size: 13px;
+      color: var(--color-gray-600);
+    }
+    
+    /* Issue Check Cards */
+    .checks-grid {
+      display: grid;
+      gap: 12px;
+    }
+    
+    .check-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--color-gray-200);
+      transition: all 0.2s ease;
+    }
+    
+    .check-card:hover {
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .check-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    
+    .check-icon.pass {
+      background: var(--color-success-light);
+      color: var(--color-success);
+    }
+    
+    .check-icon.fail {
+      background: var(--color-error-light);
+      color: var(--color-error);
+    }
+    
+    .check-icon.warning {
+      background: var(--color-warning-light);
+      color: var(--color-warning);
+    }
+    
+    .check-content {
+      flex: 1;
+    }
+    
+    .check-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-gray-900);
+      margin-bottom: 2px;
+    }
+    
+    .check-desc {
+      font-size: 13px;
+      color: var(--color-gray-600);
+    }
+    
+    .check-meta {
+      text-align: right;
+      font-size: 12px;
+      color: var(--color-gray-500);
+    }
+    
+    .check-meta span {
+      display: block;
+    }
+    
+    .check-count {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--color-gray-700);
+    }
+    
+    /* Severity Badge */
+    .severity-badge {
+      display: inline-flex;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .severity-critical { 
+      background: var(--color-error-light); 
+      color: #991b1b; 
+    }
+    
+    .severity-high { 
+      background: #ffedd5; 
+      color: #9a3412; 
+    }
+    
+    .severity-medium { 
+      background: var(--color-warning-light); 
+      color: #92400e; 
+    }
+    
+    .severity-low { 
+      background: var(--color-info-light); 
+      color: #1e40af; 
+    }
+    
+    /* Summary Cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .summary-card {
+      background: white;
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-gray-200);
+      text-align: center;
+    }
+    
+    .summary-value {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    
+    .summary-label {
+      font-size: 13px;
+      color: var(--color-gray-600);
+      font-weight: 500;
+    }
+    
+    /* Charts */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+    
+    .chart-container {
+      background: var(--color-gray-50);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      height: 320px;
+      border: 1px solid var(--color-gray-200);
+    }
+    
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--color-gray-700);
+    }
+    
+    canvas {
+      width: 100% !important;
+      height: calc(100% - 40px) !important;
+    }
+    
+    /* Lighthouse Metrics */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+    }
+    
+    .metric-card {
+      background: var(--color-gray-50);
+      padding: 24px 16px;
+      border-radius: var(--radius-lg);
+      text-align: center;
+      border: 1px solid var(--color-gray-200);
+    }
+    
+    .metric-value {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    
+    .metric-label { 
+      font-size: 13px; 
+      color: var(--color-gray-600);
+      font-weight: 600;
+    }
+    
+    .metric-sublabel { 
+      font-size: 11px; 
+      color: var(--color-gray-400);
+      margin-top: 4px;
+    }
+    
+    /* Color Utilities */
+    .text-green { color: var(--color-success); }
+    .text-yellow { color: var(--color-warning); }
+    .text-orange { color: #f97316; }
+    .text-red { color: var(--color-error); }
+    .text-blue { color: var(--color-info); }
+    .bg-green { background: var(--color-success); }
+    .bg-yellow { background: var(--color-warning); }
+    .bg-orange { background: #f97316; }
+    .bg-red { background: var(--color-error); }
+    .bg-blue { background: var(--color-info); }
+    
+    /* Freshness Section */
+    .freshness-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    
+    .freshness-card {
+      background: var(--color-gray-50);
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-gray-200);
+    }
+    
+    .freshness-type {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-gray-600);
+      margin-bottom: 8px;
+    }
+    
+    .freshness-score {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    
+    .freshness-detail {
+      font-size: 12px;
+      color: var(--color-gray-500);
+    }
+    
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--color-gray-500);
+      font-size: 14px;
+    }
+    
+    /* Button */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--color-info);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    /* Responsive */
+    @media (max-width: 640px) {
+      .container { padding: 16px; }
+      .header { padding: 24px; }
+      .score-number { font-size: 40px; }
+      .section { padding: 24px; }
+      .pillars-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">
+          <div class="logo-icon">SEO</div>
+          <div>
+            <h1 style="font-size: 22px; font-weight: 700; color: var(--color-gray-900);">SEO Audit Report</h1>
+            <p style="font-size: 14px; color: var(--color-gray-500);">https://mahoorab.com/</p>
+          </div>
+        </div>
+        <button onclick="downloadReport()" class="btn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Download Report
+        </button>
+      </div>
+      
+      <div class="score-section">
+        <div class="score-info">
+          <div class="grade-badge" style="background: #f59e0b15; color: #f59e0b;">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+            C - Fair
+          </div>
+          
+          <div class="score-display">
+            <span class="score-number" style="color: #f59e0b;">72.7</span>
+            <span class="score-total">/100</span>
+          </div>
+          
+          <p class="score-meta">Audit completed in 3m 27s</p>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">50</div>
+              <div class="stat-label">Pages Checked</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">211</div>
+              <div class="stat-label">Pages Discovered</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="score-gauge-container">
+          <div class="score-gauge">
+            <svg width="220" height="220" viewBox="0 0 100 100">
+              <circle class="score-gauge-bg" cx="50" cy="50" r="42"/>
+              <circle id="score-circle" class="score-gauge-fill" cx="50" cy="50" r="42" 
+                      stroke="#f59e0b"
+                      stroke-dasharray="264" 
+                      stroke-dashoffset="264"/>
+            </svg>
+            <div class="score-gauge-text">
+              <div class="score-gauge-value" style="color: #f59e0b;">73</div>
+              <div class="score-gauge-label">of 100</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Issues Summary -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-value" style="color: #10b981;">0</div>
+        <div class="summary-label">Critical</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-value" style="color: #f97316;">4</div>
+        <div class="summary-label">High</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-value" style="color: #f59e0b;">5</div>
+        <div class="summary-label">Medium</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-value" style="color: #3b82f6;">2</div>
+        <div class="summary-label">Low</div>
+      </div>
+    </div>
+    
+    <!-- Pillar Scores with Visual Checks -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white;">📊</div>
+        <div class="section-title">Pillar Scores</div>
+      </div>
+      
+      <div class="pillars-grid">
+        
+    <div class="pillar-card">
+      <div class="pillar-header">
+        <div class="pillar-icon" style="background: #3b82f620; color: #3b82f6;">
+          🔍
+        </div>
+        <div class="pillar-info">
+          <div class="pillar-name">Indexability</div>
+          <div class="pillar-score" style="color: #3b82f6;">83.4</div>
+          <div class="pillar-status" style="color: #10b981;">
+            <span style="font-weight: 700;">✓</span> Excellent
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 83.4%; background: #3b82f6;"></div>
+      </div>
+      <div class="pillar-issues">
+        No issues found ✓
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-header">
+        <div class="pillar-icon" style="background: #10b98120; color: #10b981;">
+          🕷️
+        </div>
+        <div class="pillar-info">
+          <div class="pillar-name">Crawlability</div>
+          <div class="pillar-score" style="color: #10b981;">87.4</div>
+          <div class="pillar-status" style="color: #10b981;">
+            <span style="font-weight: 700;">✓</span> Excellent
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 87.4%; background: #10b981;"></div>
+      </div>
+      <div class="pillar-issues">
+        1 issues found
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-header">
+        <div class="pillar-icon" style="background: #f59e0b20; color: #f59e0b;">
+          📝
+        </div>
+        <div class="pillar-info">
+          <div class="pillar-name">On-Page</div>
+          <div class="pillar-score" style="color: #f59e0b;">85.7</div>
+          <div class="pillar-status" style="color: #10b981;">
+            <span style="font-weight: 700;">✓</span> Excellent
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 85.7%; background: #f59e0b;"></div>
+      </div>
+      <div class="pillar-issues">
+        3 issues found
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-header">
+        <div class="pillar-icon" style="background: #8b5cf620; color: #8b5cf6;">
+          ⚙️
+        </div>
+        <div class="pillar-info">
+          <div class="pillar-name">Technical</div>
+          <div class="pillar-score" style="color: #8b5cf6;">66.6</div>
+          <div class="pillar-status" style="color: #f59e0b;">
+            <span style="font-weight: 700;">!</span> Needs Improvement
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 66.6%; background: #8b5cf6;"></div>
+      </div>
+      <div class="pillar-issues">
+        3 issues found
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-header">
+        <div class="pillar-icon" style="background: #ec489920; color: #ec4899;">
+          🕐
+        </div>
+        <div class="pillar-info">
+          <div class="pillar-name">Freshness</div>
+          <div class="pillar-score" style="color: #ec4899;">37.0</div>
+          <div class="pillar-status" style="color: #ef4444;">
+            <span style="font-weight: 700;">✕</span> Needs Attention
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 37%; background: #ec4899;"></div>
+      </div>
+      <div class="pillar-issues">
+        No issues found ✓
+      </div>
+    </div>
+    
+    <div class="pillar-card">
+      <div class="pillar-header">
+        <div class="pillar-icon" style="background: #0ea5e920; color: #0ea5e9;">
+          ⚡
+        </div>
+        <div class="pillar-info">
+          <div class="pillar-name">Performance</div>
+          <div class="pillar-score" style="color: #0ea5e9;">75.1</div>
+          <div class="pillar-status" style="color: #f59e0b;">
+            <span style="font-weight: 700;">!</span> Needs Improvement
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 75.1%; background: #0ea5e9;"></div>
+      </div>
+      <div class="pillar-issues">
+        2 issues found
+      </div>
+    </div>
+    
+      </div>
+    </div>
+    
+    <!-- Detailed Checks by Pillar -->
+    
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: #10b98120; color: #10b981;">
+          🕷️
+        </div>
+        <div class="section-title">Crawlability - Detailed Checks</div>
+        <div class="section-score" style="color: #10b981;">87.4</div>
+      </div>
+      
+      <div class="checks-grid">
+        
+          <div class="check-card">
+            <div class="check-icon warning">!</div>
+            <div class="check-content">
+              <div class="check-title">E04 - Redirect chains</div>
+              <div class="check-desc">Long redirect chains slow crawling and can dilute signals. Replace with a single direct redirect.</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-medium">medium</span>
+              <span class="check-count">49 pages</span>
+            </div>
+          </div>
+          
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: #f59e0b20; color: #f59e0b;">
+          📝
+        </div>
+        <div class="section-title">On-Page - Detailed Checks</div>
+        <div class="section-score" style="color: #f59e0b;">85.7</div>
+      </div>
+      
+      <div class="checks-grid">
+        
+          <div class="check-card">
+            <div class="check-icon warning">!</div>
+            <div class="check-content">
+              <div class="check-title">F07 - Missing H1</div>
+              <div class="check-desc">Missing H1 can weaken page clarity. Add one clear H1 per page.</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-medium">medium</span>
+              <span class="check-count">20 pages</span>
+            </div>
+          </div>
+          
+          <div class="check-card">
+            <div class="check-icon fail">✕</div>
+            <div class="check-content">
+              <div class="check-title">F04 - Missing or too short meta description</div>
+              <div class="check-desc">Meta description is missing or too short. Write helpful snippets to improve CTR.</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-high">high</span>
+              <span class="check-count">6 pages</span>
+            </div>
+          </div>
+          
+          <div class="check-card">
+            <div class="check-icon warning">!</div>
+            <div class="check-content">
+              <div class="check-title">F08 - Multiple H1 tags</div>
+              <div class="check-desc">Multiple H1 tags can reduce clarity. Prefer a single main H1.</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-medium">medium</span>
+              <span class="check-count">11 pages</span>
+            </div>
+          </div>
+          
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: #8b5cf620; color: #8b5cf6;">
+          ⚙️
+        </div>
+        <div class="section-title">Technical - Detailed Checks</div>
+        <div class="section-score" style="color: #8b5cf6;">66.6</div>
+      </div>
+      
+      <div class="checks-grid">
+        
+          <div class="check-card">
+            <div class="check-icon fail">✕</div>
+            <div class="check-content">
+              <div class="check-title">E06 - Canonical mismatch</div>
+              <div class="check-desc">Canonical URL should match the final URL of the page. Mismatches can confuse indexing and duplicate handling.</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-high">high</span>
+              <span class="check-count">31 pages</span>
+            </div>
+          </div>
+          
+          <div class="check-card">
+            <div class="check-icon warning">!</div>
+            <div class="check-content">
+              <div class="check-title">G01 - Images missing alt text</div>
+              <div class="check-desc">Alt text improves accessibility and image search understanding. Add meaningful alt text for informative images.</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-low">low</span>
+              <span class="check-count">48 pages</span>
+            </div>
+          </div>
+          
+          <div class="check-card">
+            <div class="check-icon warning">!</div>
+            <div class="check-content">
+              <div class="check-title">P01 - Slow server response (&gt;800ms)</div>
+              <div class="check-desc">Time to First Byte (TTFB) over 800ms indicates slow server response. Optimize server configuration or upgrade hosting.</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-medium">medium</span>
+              <span class="check-count">9 pages</span>
+            </div>
+          </div>
+          
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: #0ea5e920; color: #0ea5e9;">
+          ⚡
+        </div>
+        <div class="section-title">Performance - Detailed Checks</div>
+        <div class="section-score" style="color: #0ea5e9;">75.1</div>
+      </div>
+      
+      <div class="checks-grid">
+        
+          <div class="check-card">
+            <div class="check-icon fail">✕</div>
+            <div class="check-content">
+              <div class="check-title">L02 - Slow Largest Contentful Paint (&gt;2.5s)</div>
+              <div class="check-desc">Largest Contentful Paint (LCP) measures loading performance. Over 2.5s provides poor user experience and affects rankings.</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-high">high</span>
+              <span class="check-count">1 pages</span>
+            </div>
+          </div>
+          
+          <div class="check-card">
+            <div class="check-icon warning">!</div>
+            <div class="check-content">
+              <div class="check-title">L04 - High Total Blocking Time (&gt;200ms)</div>
+              <div class="check-desc">Total Blocking Time (TBT) measures interactivity. Over 200ms causes input delays and poor user experience.</div>
+            </div>
+            <div class="check-meta">
+              <span class="severity-badge severity-medium">medium</span>
+              <span class="check-count">1 pages</span>
+            </div>
+          </div>
+          
+      </div>
+    </div>
+    
+    
+    <!-- Charts -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">📈</div>
+        <div class="section-title">Analysis & Charts</div>
+      </div>
+      
+      <div class="charts-grid">
+        <div class="chart-container">
+          <div class="chart-title">Pillar Scores</div>
+          <canvas id="pillarsCanvas"></canvas>
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">Issues Distribution</div>
+          <canvas id="issuesCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">⚡</div>
+      <div class="section-title">Core Web Vitals</div>
+    </div>
+    
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-value" style="color: #ef4444;">4.15s</div>
+        <div class="metric-label">LCP</div>
+        <div class="metric-sublabel">Largest Contentful Paint</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" style="color: #10b981;">0.014</div>
+        <div class="metric-label">CLS</div>
+        <div class="metric-sublabel">Cumulative Layout Shift</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" style="color: #ef4444;">918ms</div>
+        <div class="metric-label">TBT</div>
+        <div class="metric-sublabel">Total Blocking Time</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" style="color: #ef4444;">59</div>
+        <div class="metric-label">Performance</div>
+        <div class="metric-sublabel">Lighthouse Score</div>
+      </div>
+    </div>
+  </div>
+  
+    
+    
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: linear-gradient(135deg, #ec4899, #db2777); color: white;">🕐</div>
+      <div class="section-title">Content Freshness</div>
+      <div class="section-score" style="color: #ef4444;">37%</div>
+    </div>
+    
+    <div class="freshness-grid">
+      
+    <div class="freshness-card">
+      <div class="freshness-type">Blog Posts</div>
+      <div class="freshness-score" style="color: #ef4444;">0%</div>
+      <div class="freshness-detail">
+        0 fresh / 76 stale (3mo threshold)
+      </div>
+    </div>
+    
+    <div class="freshness-card">
+      <div class="freshness-type">Pages</div>
+      <div class="freshness-score" style="color: #ef4444;">18%</div>
+      <div class="freshness-detail">
+        2 fresh / 9 stale (12mo threshold)
+      </div>
+    </div>
+    
+    <div class="freshness-card">
+      <div class="freshness-type">wp_navigation</div>
+      <div class="freshness-score" style="color: #ef4444;">0%</div>
+      <div class="freshness-detail">
+        0 fresh / 1 stale (6mo threshold)
+      </div>
+    </div>
+    
+    <div class="freshness-card">
+      <div class="freshness-type">Products</div>
+      <div class="freshness-score" style="color: #10b981;">100%</div>
+      <div class="freshness-detail">
+        48 fresh / 0 stale (6mo threshold)
+      </div>
+    </div>
+    
+    </div>
+    
+    
+    <div style="margin-top: 20px; padding: 16px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+      <div style="font-weight: 600; color: #92400e; margin-bottom: 8px;">Recommendations:</div>
+      <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 14px;">
+        <li style="margin-bottom: 4px;">86 pages haven't been updated in 6+ months. Stale content may hurt rankings.</li><li style="margin-bottom: 4px;">Content type(s) "wp_navigation" have few pages. Consider removing or merging if not needed.</li>
+      </ul>
+    </div>
+    
+  </div>
+  
+    
+    <div class="footer">
+      <p>Generated by SEO Audit Bot</p>
+      <p style="font-size: 12px; margin-top: 4px; color: var(--color-gray-400);">2/25/2026, 4:30:13 PM</p>
+    </div>
+  </div>
+  
+  <script>
+    // Animate score gauge
+    setTimeout(() => {
+      const circle = document.getElementById('score-circle');
+      if (circle) {
+        const circumference = 2 * Math.PI * 42;
+        const offset = circumference - (72.7 / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+      }
+    }, 200);
+    
+    // Download report
+    function downloadReport() {
+      const html = document.documentElement.outerHTML;
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'seo-audit-report.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    // Canvas charts (same as before but modernized)
+    function drawBarChart(canvasId, labels, data, colors) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      const padding = 50;
+      const chartWidth = rect.width - padding * 2;
+      const chartHeight = rect.height - padding * 2;
+      const barWidth = chartWidth / data.length * 0.5;
+      const spacing = chartWidth / data.length;
+      const maxValue = 100;
+      
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      
+      data.forEach((value, i) => {
+        const barHeight = (value / maxValue) * chartHeight;
+        const x = padding + i * spacing + (spacing - barWidth) / 2;
+        const y = rect.height - padding - barHeight;
+        
+        // Bar with gradient
+        const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+        gradient.addColorStop(0, colors[i]);
+        gradient.addColorStop(1, colors[i] + '80');
+        ctx.fillStyle = gradient;
+        
+        ctx.beginPath();
+        ctx.roundRect(x, y, barWidth, barHeight, 6);
+        ctx.fill();
+        
+        // Value on top
+        ctx.fillStyle = '#374151';
+        ctx.font = 'bold 13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(value.toFixed(0), x + barWidth / 2, y - 8);
+        
+        // Label at bottom
+        ctx.save();
+        ctx.translate(x + barWidth / 2, rect.height - padding + 20);
+        ctx.rotate(-Math.PI / 8);
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillText(labels[i], 0, 0);
+        ctx.restore();
+      });
+      
+      // Grid lines
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 5; i++) {
+        const y = rect.height - padding - (i / 5) * chartHeight;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(rect.width - padding, y);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText((i * 20).toString(), padding - 8, y + 3);
+      }
+    }
+    
+    function drawDoughnutChart(canvasId, labels, data, colors) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2 - 10;
+      const radius = Math.min(centerX, centerY) - 30;
+      const innerRadius = radius * 0.55;
+      
+      const total = data.reduce((a, b) => a + b, 0);
+      let currentAngle = -Math.PI / 2;
+      
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      
+      if (total === 0) {
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No issues found', centerX, centerY);
+        return;
+      }
+      
+      data.forEach((value, i) => {
+        if (value === 0) return;
+        
+        const sliceAngle = (value / total) * Math.PI * 2;
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+        ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+        
+        currentAngle += sliceAngle;
+      });
+      
+      // Center text
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 28px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(total.toString(), centerX, centerY + 5);
+      
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '12px Inter, sans-serif';
+      ctx.fillText('Issues', centerX, centerY + 22);
+      
+      // Legend at bottom
+      let legendY = rect.height - 25;
+      let legendX = 20;
+      const legendItemWidth = (rect.width - 40) / labels.length;
+      
+      labels.forEach((label, i) => {
+        if (data[i] === 0) return;
+        
+        const x = legendX + i * legendItemWidth;
+        
+        ctx.fillStyle = colors[i];
+        ctx.beginPath();
+        ctx.arc(x + 6, legendY + 6, 5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#374151';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(label + ' (' + data[i] + ')', x + 16, legendY + 10);
+      });
+    }
+    
+    // Initialize charts
+    window.addEventListener('load', () => {
+      drawBarChart('pillarsCanvas', 
+        ["Indexability","Crawlability","On-Page","Technical","Freshness","Performance"],
+        [83.4, 87.4, 85.7, 66.6, 37, 75.1],
+        ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9']
+      );
+      
+      drawDoughnutChart('issuesCanvas',
+        ["Critical","High","Medium","Low"],
+        [0, 4, 5, 2],
+        ['#ef4444', '#f97316', '#f59e0b', '#3b82f6']
+      );
+    });
+    
+    // Redraw on resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        drawBarChart('pillarsCanvas', 
+          ["Indexability","Crawlability","On-Page","Technical","Freshness","Performance"],
+          [83.4, 87.4, 85.7, 66.6, 37, 75.1],
+          ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9']
+        );
+        drawDoughnutChart('issuesCanvas',
+          ["Critical","High","Medium","Low"],
+          [0, 4, 5, 2],
+          ['#ef4444', '#f97316', '#f59e0b', '#3b82f6']
+        );
+      }, 250);
+    });
+  </script>
+</body>
+</html>

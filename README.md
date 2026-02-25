@@ -1,16 +1,41 @@
-# SEO Audit Bot — v1.7
+# SEO Audit Bot — v3.0
+
+> **Latest Version: 3.0.0** (February 25, 2026)  
+> Major update with complete UI overhaul, scoring fixes, and enhanced transparency.
 
 A production-ready SEO audit service with WordPress integration, content freshness analysis, and intelligent scoring.
+
+## What's New in v3.0
+
+### 🎨 Complete UI Redesign
+- **Modern card-based layout** with color-coded status indicators
+- **Pass/Fail badges** - Clear ✓ Pass or ✕ Fail for each check
+- **Penalty transparency** - Shows exact penalty points (-X.X pts)
+- **Clickable check cards** with expandable page lists
+- **Smooth animations** and responsive design
+
+### 🎯 Major Scoring Fixes
+- **Fixed false penalties** - No penalties for issues with 0 affected pages
+- **Accurate scoring** - Indexability now correctly shows 100/100 when clean
+- **Better weight distribution** - Technical & Performance increased, Indexability balanced
+
+### 📊 Enhanced Reporting
+- **Pages Breakdown** - Visual grid showing pages by content type (Products, Blog, Pages)
+- **Simplified Freshness** - "Last updated X ago" instead of confusing percentages
+- **No duplicate URLs** - Automatic deduplication with normalization
+- **Smart utility detection** - Cart, login, auth pages excluded from H1 checks
 
 ## Key Features
 
 - **Dual Audit Modes**: Smart sampling (50 pages) or Full crawl (120 pages)
 - **WordPress REST API Integration**: Enhanced accuracy for WP sites with content freshness tracking
-- **5-Pillar Scoring System**: Indexability, Crawlability, On-Page SEO, Technical, Freshness
-- **Content Freshness Analysis**: Tracks last modified dates, identifies stale content (>6 months)
+- **6-Pillar Scoring System**: Indexability, Crawlability, On-Page SEO, Technical, Freshness, Performance
+- **Content Freshness Analysis**: Simple "last updated X ago" format per content type
 - **Latest Content Tracking**: Shows 5 most recent products and blog posts
-- **Bilingual Support**: Telegram summaries in Persian (FA) and English (EN)
-- **Comprehensive Reports**: JSON, PDF, and Telegram-formatted outputs
+- **Bilingual Support**: Persian (FA) and English (EN) with RTL layout
+- **Comprehensive Reports**: JSON, HTML (with new UI), PDF, and Telegram outputs
+- **Penalty Transparency**: Shows exact penalty points for each issue
+- **Pages Breakdown**: Visual breakdown of crawled pages by type
 
 ## Run (Development)
 
