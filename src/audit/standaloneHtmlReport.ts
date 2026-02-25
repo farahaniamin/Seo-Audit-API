@@ -922,7 +922,7 @@ export function generateStandaloneHtmlReport(report: any, lang: 'en' | 'fa' = 'e
     // Toggle check details (expandable page lists)
     function toggleCheckDetails(checkId) {
       const detailsDiv = document.getElementById('check-details-' + checkId);
-      const checkCard = document.querySelector('[onclick="toggleCheckDetails(\'' + checkId + '\')"]');
+      const checkCard = document.querySelector('[data-check-id="' + checkId + '"]');
       const viewPagesSpan = checkCard?.querySelector('.view-pages');
       
       if (detailsDiv) {
@@ -1326,7 +1326,7 @@ function generateDetailedChecksSection(pillars: any, issuesByPillar: any, breakd
           const exampleUrls = foundIssue?.example_urls || [];
           
           let cardHtml = `
-          <div class="check-card ${isPassed ? 'check-passed' : 'check-failed'}" style="cursor: ${foundIssue ? 'pointer' : 'default'};" ${foundIssue ? `onclick="toggleCheckDetails('${check.id}')"` : ''}>
+          <div class="check-card ${isPassed ? 'check-passed' : 'check-failed'}" data-check-id="${check.id}" style="cursor: ${foundIssue ? 'pointer' : 'default'};" ${foundIssue ? `onclick="toggleCheckDetails('${check.id}')"` : ''}>
             <div class="check-icon ${statusClass}">${icon}</div>
             <div class="check-content">
               <div class="check-title">${check.id} - ${escapeHtml(check.title)}</div>
